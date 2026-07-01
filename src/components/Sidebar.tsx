@@ -243,7 +243,7 @@ export default function Sidebar() {
 
       <aside
         className={[
-          "fixed inset-y-0 left-0 z-50 flex h-screen w-sidebar flex-col gap-10 bg-neutral-50 px-4 py-5",
+          "fixed inset-y-0 left-0 z-50 h-screen w-sidebar overflow-y-auto overscroll-contain bg-neutral-50 px-4 py-5",
           "transition-[transform,width,box-shadow] duration-300 ease-in-out",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
           "md:sticky md:top-0 md:z-0 md:translate-x-0",
@@ -251,6 +251,7 @@ export default function Sidebar() {
           scrolled ? "shadow-[2px_0_16px_rgba(0,0,0,0.08)]" : "shadow-none",
         ].join(" ")}
       >
+       <div className="flex min-h-full flex-col gap-10">
         {/* Logo header */}
         {showCollapsed ? (
           <div className="flex h-20 shrink-0 items-center justify-center py-1">
@@ -341,6 +342,7 @@ export default function Sidebar() {
             )}
           </div>
         </nav>
+       </div>
       </aside>
     </>
   );
