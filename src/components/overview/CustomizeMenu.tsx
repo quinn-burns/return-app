@@ -88,7 +88,7 @@ export default function CustomizeMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute left-0 top-full z-50 mt-2 flex w-[267px] flex-col gap-4 rounded-lg border border-neutral-150 bg-neutral-0 p-4 shadow-[0px_4px_20px_7px_rgba(0,0,0,0.07)]"
+          className="absolute right-0 top-full z-50 mt-2 flex w-[267px] max-w-[calc(100vw-2rem)] flex-col gap-4 rounded-lg border border-neutral-150 bg-neutral-0 p-4 shadow-[0px_4px_20px_7px_rgba(0,0,0,0.07)]"
         >
           {ROWS.map((row, i) => (
             <div key={row.label} className="flex flex-col gap-1.5">
