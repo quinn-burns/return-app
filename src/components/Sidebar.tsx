@@ -142,48 +142,42 @@ function AiCreditUsage({ collapsed }: { collapsed?: boolean }) {
   );
 }
 
-function HamburgerIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M4 7h16M4 12h16M4 17h16"
-        stroke="#212121"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M6 6l12 12M18 6L6 18"
-        stroke="#212121"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 export default function Sidebar() {
   const [scrolled, setScrolled] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  // ≥1280px: sidebar sits in the layout flow. Below that it is a fixed rail
+  // that can expand as an overlay without pushing the page content.
+  const [isWide, setIsWide] = useState(true);
+  const [narrowExpanded, setNarrowExpanded] = useState(false);
 
   // Restore the desktop collapsed preference.
   useEffect(() => {
     setCollapsed(localStorage.getItem("sidebar:collapsed") === "1");
   }, []);
 
-  const toggleCollapsed = () =>
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1280px)");
+    const apply = (matches: boolean) => {
+      setIsWide(matches);
+      setNarrowExpanded(false);
+    };
+    apply(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => apply(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  const toggleCollapsed = () => {
+    if (!isWide) {
+      setNarrowExpanded((open) => !open);
+      return;
+    }
     setCollapsed((c) => {
       const next = !c;
       localStorage.setItem("sidebar:collapsed", next ? "1" : "0");
       return next;
     });
+  };
 
   // Sticky shadow after 50px of page scroll.
   useEffect(() => {
@@ -193,49 +187,22 @@ export default function Sidebar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Lock body scroll while the mobile panel is open.
-  useEffect(() => {
-    document.body.style.overflow = mobileOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [mobileOpen]);
+  const collapseOverlay = () => setNarrowExpanded(false);
 
-  // Close the mobile panel when crossing back to desktop.
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    const onChange = (e: MediaQueryListEvent) => {
-      if (e.matches) setMobileOpen(false);
-    };
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-
-  const closeMobile = () => setMobileOpen(false);
-
-  // Collapse only applies on desktop; the mobile slide-in panel is always expanded.
-  const showCollapsed = collapsed && !mobileOpen;
+  const showCollapsed = isWide ? collapsed : !narrowExpanded;
 
   return (
     <>
-      {/* Mobile hamburger trigger (hidden ≥768px) */}
-      <button
-        type="button"
-        aria-label="Open navigation menu"
-        aria-expanded={mobileOpen}
-        onClick={() => setMobileOpen(true)}
-        className="fixed left-4 top-4 z-30 flex size-10 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-0 shadow-sm md:hidden"
-      >
-        <HamburgerIcon />
-      </button>
+      {/* Reserves the rail width while the sidebar is fixed (narrow screens) */}
+      <div aria-hidden="true" className="w-sidebar-collapsed shrink-0 xl:hidden" />
 
-      {/* Backdrop overlay (mobile only) */}
+      {/* Backdrop while the expanded sidebar overlays content (narrow screens) */}
       <div
-        onClick={closeMobile}
+        onClick={collapseOverlay}
         aria-hidden="true"
         className={[
-          "fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 md:hidden",
-          mobileOpen
+          "fixed inset-0 z-30 bg-black/40 transition-opacity duration-300 xl:hidden",
+          narrowExpanded
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0",
         ].join(" ")}
@@ -243,12 +210,15 @@ export default function Sidebar() {
 
       <aside
         className={[
-          "fixed inset-y-0 left-0 z-50 h-screen w-sidebar overflow-y-auto overscroll-contain bg-neutral-50 px-4 py-5",
-          "transition-[transform,width,box-shadow] duration-300 ease-in-out",
-          mobileOpen ? "translate-x-0" : "-translate-x-full",
-          "md:sticky md:top-0 md:z-0 md:translate-x-0",
-          showCollapsed ? "md:w-sidebar-collapsed" : "md:w-sidebar",
-          scrolled ? "shadow-[2px_0_16px_rgba(0,0,0,0.08)]" : "shadow-none",
+          "fixed inset-y-0 left-0 z-40 h-screen overflow-y-auto overscroll-contain bg-neutral-50 px-4 py-5",
+          "transition-[width,box-shadow] duration-300 ease-in-out",
+          "xl:sticky xl:top-0 xl:z-0",
+          showCollapsed ? "w-sidebar-collapsed" : "w-sidebar",
+          narrowExpanded
+            ? "shadow-[2px_0_16px_rgba(0,0,0,0.16)]"
+            : scrolled
+              ? "shadow-[2px_0_16px_rgba(0,0,0,0.08)]"
+              : "shadow-none",
         ].join(" ")}
       >
        <div className="flex min-h-full flex-col gap-6">
@@ -273,20 +243,11 @@ export default function Sidebar() {
               alt="Arc'teryx"
               className="h-[72px] w-[122px] object-contain"
             />
-            {/* Mobile: close. Desktop: collapse. */}
-            <button
-              type="button"
-              aria-label="Close navigation menu"
-              onClick={closeMobile}
-              className="shrink-0 md:hidden"
-            >
-              <CloseIcon />
-            </button>
             <button
               type="button"
               aria-label="Collapse sidebar"
               onClick={toggleCollapsed}
-              className="hidden size-9 shrink-0 items-center justify-center rounded-lg hover:bg-neutral-100 md:flex"
+              className="flex size-9 shrink-0 items-center justify-center rounded-lg hover:bg-neutral-100"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/nav/right-panel-open.svg" alt="" className="size-6" />
@@ -302,7 +263,7 @@ export default function Sidebar() {
                 key={item.label}
                 item={item}
                 collapsed={showCollapsed}
-                onNavigate={closeMobile}
+                onNavigate={collapseOverlay}
               />
             ))}
           </div>
@@ -314,7 +275,7 @@ export default function Sidebar() {
                   key={item.label}
                   item={item}
                   collapsed={showCollapsed}
-                  onNavigate={closeMobile}
+                  onNavigate={collapseOverlay}
                 />
               ))}
             </div>
