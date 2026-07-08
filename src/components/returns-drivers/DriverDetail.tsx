@@ -275,31 +275,30 @@ function TrendChart() {
 function ReasonsDonut() {
   const r = 40;
   const c = 2 * Math.PI * r;
-  let acc = 0;
+  const segments = REASONS.map((seg, i) => ({
+    ...seg,
+    dash: (seg.pct / 100) * c,
+    offset: REASONS.slice(0, i).reduce((sum, s) => sum + (s.pct / 100) * c, 0),
+  }));
   return (
     <div className="w-full shrink-0 rounded-lg border border-neutral-200 p-3 lg:w-[240px]">
       <p className="text-xs text-neutral-600">Return Reasons</p>
       <div className="my-2 flex justify-center">
         <div className="relative size-[120px]">
           <svg viewBox="0 0 100 100" className="size-full -rotate-90">
-            {REASONS.map((seg) => {
-              const dash = (seg.pct / 100) * c;
-              const el = (
-                <circle
-                  key={seg.label}
-                  cx="50"
-                  cy="50"
-                  r={r}
-                  fill="none"
-                  stroke={seg.color}
-                  strokeWidth="10"
-                  strokeDasharray={`${dash} ${c - dash}`}
-                  strokeDashoffset={-acc}
-                />
-              );
-              acc += dash;
-              return el;
-            })}
+            {segments.map((seg) => (
+              <circle
+                key={seg.label}
+                cx="50"
+                cy="50"
+                r={r}
+                fill="none"
+                stroke={seg.color}
+                strokeWidth="10"
+                strokeDasharray={`${seg.dash} ${c - seg.dash}`}
+                strokeDashoffset={-seg.offset}
+              />
+            ))}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-lg font-bold text-neutral-800">432</span>

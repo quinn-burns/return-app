@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -142,29 +142,35 @@ function AiCreditUsage({ collapsed }: { collapsed?: boolean }) {
   );
 }
 
+const WIDE_QUERY = "(min-width: 1280px)";
+
 export default function Sidebar() {
   const [scrolled, setScrolled] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  // ≥1280px: sidebar sits in the layout flow. Below that it is a fixed rail
-  // that can expand as an overlay without pushing the page content.
-  const [isWide, setIsWide] = useState(true);
   const [narrowExpanded, setNarrowExpanded] = useState(false);
 
-  // Restore the desktop collapsed preference.
-  useEffect(() => {
-    setCollapsed(localStorage.getItem("sidebar:collapsed") === "1");
-  }, []);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1280px)");
-    const apply = (matches: boolean) => {
-      setIsWide(matches);
+  // ≥1280px: sidebar sits in the layout flow. Below that it is a fixed rail
+  // that can expand as an overlay without pushing the page content.
+  const subscribeToWidth = useCallback((onStoreChange: () => void) => {
+    const mq = window.matchMedia(WIDE_QUERY);
+    const onChange = () => {
       setNarrowExpanded(false);
+      onStoreChange();
     };
-    apply(mq.matches);
-    const onChange = (e: MediaQueryListEvent) => apply(e.matches);
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
+  }, []);
+  const isWide = useSyncExternalStore(
+    subscribeToWidth,
+    () => window.matchMedia(WIDE_QUERY).matches,
+    () => true,
+  );
+
+  // Restore the desktop collapsed preference. Reading localStorage must wait
+  // until after hydration, so the post-mount setState is intentional.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCollapsed(localStorage.getItem("sidebar:collapsed") === "1");
   }, []);
 
   const toggleCollapsed = () => {

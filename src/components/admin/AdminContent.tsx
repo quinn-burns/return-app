@@ -183,13 +183,14 @@ function TabBar({ tab, onChange }: { tab: Tab; onChange: (tab: Tab) => void }) {
   ];
   return (
     <div className="w-full border-b border-neutral-200">
-      <div className="flex">
+      <div className="flex" role="tablist">
         {tabs.map(({ id, label, icon }) => {
           const active = tab === id;
           return (
             <button
               key={id}
               type="button"
+              role="tab"
               onClick={() => onChange(id)}
               aria-selected={active}
               className="flex h-10 flex-col items-center"
