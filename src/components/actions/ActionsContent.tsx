@@ -1,5 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import { FilterButton, FilterDropdown, IconButton } from "../overview/Buttons";
 import CustomizeMenu from "../overview/CustomizeMenu";
+import ActionDetail from "./ActionDetail";
+import CreateActionModal from "./CreateActionModal";
 
 /* ----------------------------- data ----------------------------- */
 
@@ -86,9 +91,28 @@ function BranchBadge() {
   );
 }
 
-function ActionCard({ card, status }: { card: Card; status: string }) {
+function ActionCard({
+  card,
+  status,
+  onSelect,
+}: {
+  card: Card;
+  status: string;
+  onSelect: () => void;
+}) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-neutral-200 bg-neutral-0 p-4">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      className="flex cursor-pointer flex-col gap-3 rounded-lg border border-neutral-200 bg-neutral-0 p-4 text-left transition-colors hover:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-600/40"
+    >
       <div className="flex flex-col gap-2">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
@@ -149,7 +173,7 @@ function FilterBar() {
   );
 }
 
-function Toolbar() {
+function Toolbar({ onAddAction }: { onAddAction: () => void }) {
   const secondaryBtn =
     "flex h-10 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-0 px-4 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50";
   const dd =
@@ -159,6 +183,7 @@ function Toolbar() {
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
+          onClick={onAddAction}
           className="flex h-10 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-medium text-white transition-colors hover:bg-primary-700"
         >
           Add Action
@@ -189,12 +214,14 @@ function Toolbar() {
 /* ----------------------------- page ------------------------------ */
 
 export default function ActionsContent() {
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   return (
     <div className="min-h-screen bg-neutral-0">
       <Header />
       <div className="flex flex-col gap-5 px-4 pb-10 pt-3.5">
         <FilterBar />
-        <Toolbar />
+        <Toolbar onAddAction={() => setCreateOpen(true)} />
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {COLUMNS.map((col) => (
             <div key={col.title} className="flex flex-col gap-4">
@@ -202,12 +229,24 @@ export default function ActionsContent() {
                 {col.title} ({col.count})
               </h2>
               {col.cards.map((card, i) => (
-                <ActionCard key={i} card={card} status={col.title === "To Do" ? "To do" : col.title} />
+                <ActionCard
+                  key={i}
+                  card={card}
+                  status={col.title === "To Do" ? "To do" : col.title}
+                  onSelect={() => setDetailOpen(true)}
+                />
               ))}
             </div>
           ))}
         </div>
       </div>
+      <ActionDetail
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        title="Cozy Winter Styles Have 20.7% Return Rate"
+        sku="CN297"
+      />
+      <CreateActionModal open={createOpen} onClose={() => setCreateOpen(false)} />
     </div>
   );
 }

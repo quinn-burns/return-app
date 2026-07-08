@@ -236,7 +236,7 @@ export default function Sidebar() {
             </button>
           </div>
         ) : (
-          <div className="flex h-20 shrink-0 items-center justify-between py-1">
+          <div className="flex h-20 shrink-0 items-center gap-1 py-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/nav/arcteryx-logo.svg"

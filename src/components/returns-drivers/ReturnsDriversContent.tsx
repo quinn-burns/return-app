@@ -1,4 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import { FilterButton, FilterDropdown, IconButton } from "../overview/Buttons";
+import CreateActionModal from "../actions/CreateActionModal";
+import DriverDetail from "./DriverDetail";
 
 /* ----------------------------- data ----------------------------- */
 
@@ -147,9 +152,13 @@ function TabBar() {
   );
 }
 
-function DriverCard({ card }: { card: typeof CARD }) {
+function DriverCard({ card, onSelect }: { card: typeof CARD; onSelect: () => void }) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-neutral-200 bg-neutral-0 p-4">
+    <button
+      type="button"
+      onClick={onSelect}
+      className="flex flex-col gap-3 rounded-lg border border-neutral-200 bg-neutral-0 p-4 text-left transition-colors hover:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-600/40"
+    >
       <div className="flex flex-col gap-2">
         <div className="flex gap-1.5">
           {card.tags.map((tag) => (
@@ -172,13 +181,15 @@ function DriverCard({ card }: { card: typeof CARD }) {
           </div>
         ))}
       </div>
-    </div>
+    </button>
   );
 }
 
 /* ----------------------------- page ------------------------------ */
 
 export default function ReturnsDriversContent() {
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   return (
     <div className="min-h-screen bg-neutral-0">
       <Header />
@@ -188,10 +199,18 @@ export default function ReturnsDriversContent() {
         <TabBar />
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {CARDS.map((card, i) => (
-            <DriverCard key={i} card={card} />
+            <DriverCard key={i} card={card} onSelect={() => setDetailOpen(true)} />
           ))}
         </div>
       </div>
+      <DriverDetail
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        onCreateAction={() => setCreateOpen(true)}
+        sku={CARD.sku}
+        title={CARD.title}
+      />
+      <CreateActionModal open={createOpen} onClose={() => setCreateOpen(false)} />
     </div>
   );
 }
