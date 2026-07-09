@@ -1,6 +1,18 @@
 @import "tailwindcss";
 
 /*
+ * Tailwind's Preflight leaves buttons with the default arrow cursor.
+ * Restore the pointer affordance for interactive elements (skipping
+ * disabled buttons, which keep their own not-allowed cursor).
+ */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}
+
+/*
  * Design tokens pulled from the Figma "Navbar" frame
  * (Fuego Design – node 1801:7210) via the Figma MCP
  * get_variable_defs tool. Mapped to the Tailwind v4 theme so components
