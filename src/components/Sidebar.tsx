@@ -25,7 +25,7 @@ const UTILITY_ITEMS: NavItem[] = [
   { label: "Help Center", icon: "help", href: "/help" },
   { label: "Admin", icon: "admin", href: "/admin" },
   { label: "Notifications", icon: "notifications", href: "/notifications", badge: 3 },
-  { label: "My Account", icon: "account-circle", href: "/account" },
+  { label: "My Account", icon: "account-circle", href: "/my-account" },
 ];
 
 function NavLink({

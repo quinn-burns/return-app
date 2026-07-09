@@ -1,42 +1,11 @@
 "use client";
 
 /*
- * "Clarity" AI chat panel — Figma node 1801:8734.
- * Rendered as an overlay anchored bottom-right when the chat FAB is open.
+ * "Clarity" AI chat panel — new-conversation / welcome state (Figma node
+ * 1801:9595). Always opens fresh: greeting, suggested prompts, and the
+ * input pinned to the bottom. Shares the panel chrome (header, gradient,
+ * width, footer) with the populated design (1801:8734).
  */
-
-const PARAGRAPH =
-  "Lorem ipsum dolor sit amet consectetur. Sem magna elementum amet amet. Aliquam arcu dignissim accumsan nisl ligula enim turpis. Sit purus phasellus erat sapien senectus mi. Nibh ac bibendum habitant feugiat augue nulla. Augue in platea massa diam tortor et turpis molestie. Quam a in sed vehicula. Ac vel aliquet luctus mi eu.";
-
-function MoreVert() {
-  return (
-    /* eslint-disable-next-line @next/next/no-img-element */
-    <img src="/chat/more-vert.svg" alt="" className="size-6 shrink-0 opacity-60" />
-  );
-}
-
-function ResultTable() {
-  return (
-    <div className="w-full overflow-hidden rounded-lg border border-neutral-200">
-      <div className="flex bg-primary-50">
-        {["Title", "Title", "Title"].map((t, i) => (
-          <div key={i} className="flex-1 p-2 text-sm font-medium text-neutral-800">
-            {t}
-          </div>
-        ))}
-      </div>
-      {[false, true].map((tinted, r) => (
-        <div key={r} className={`flex ${tinted ? "bg-neutral-50" : "bg-white"}`}>
-          {[0, 1, 2].map((c) => (
-            <div key={c} className="flex-1 p-2 text-sm text-neutral-800">
-              Lorem ipsum
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export default function ChatPanel({ onClose }: { onClose: () => void }) {
   return (
@@ -62,37 +31,24 @@ export default function ChatPanel({ onClose }: { onClose: () => void }) {
         </button>
       </div>
 
-      {/* Messages */}
-      <div className="flex flex-1 flex-col gap-6 overflow-y-auto py-4">
-        {/* Bot response with table */}
-        <div className="flex flex-col pl-4 pr-12">
-          <div className="flex w-full items-start gap-2 rounded-tl-2xl rounded-tr-2xl rounded-br-2xl border border-[#e9ecff] bg-white p-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/chat/bot-logo.svg" alt="" className="size-6 shrink-0" />
-            <div className="flex min-w-0 flex-1 flex-col gap-2">
-              <p className="text-base font-medium text-neutral-800">Heading</p>
-              <p className="text-sm text-neutral-800">{PARAGRAPH}</p>
-              <ResultTable />
-            </div>
-            <MoreVert />
-          </div>
+      {/* Welcome / empty state */}
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 overflow-y-auto px-6 py-4">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <h2 className="text-[30px] font-bold leading-tight text-neutral-800">
+            Welcome to Clarity
+          </h2>
+          <p className="max-w-[420px] text-sm text-neutral-700">
+            Get instant insights about your metrics, trends, and product evolution.
+            Ask a question or start with one of the suggestions below.
+          </p>
         </div>
 
-        {/* Highlighted response */}
-        <div className="flex flex-col pl-12 pr-4">
-          <div className="flex w-full items-start gap-2 rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl border border-primary-400 bg-primary-50 p-4">
-            <p className="min-w-0 flex-1 text-sm text-neutral-800">{PARAGRAPH}</p>
-            <MoreVert />
-          </div>
-        </div>
-
-        {/* Recommended prompts */}
-        <div className="flex gap-4 px-4">
-          {[0, 1].map((i) => (
+        <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2">
+          {[0, 1, 2, 3].map((i) => (
             <button
               key={i}
               type="button"
-              className="flex min-w-0 flex-1 items-center gap-1 rounded-2xl border border-[#e9ecff] bg-white p-4 text-left transition-colors hover:bg-primary-50"
+              className="flex min-w-0 items-center gap-1 rounded-2xl border border-[#e9ecff] bg-white p-4 text-left transition-colors hover:bg-primary-50"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/chat/send-sm.svg" alt="" className="size-6 shrink-0" />
