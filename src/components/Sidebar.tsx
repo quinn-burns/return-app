@@ -17,6 +17,7 @@ const MAIN_ITEMS: NavItem[] = [
   { label: "Actions", icon: "lists", href: "/actions" },
   { label: "My Workspace", icon: "team-dashboard", href: "/workspace" },
   { label: "Products", icon: "shopping-bag", href: "/products" },
+  { label: "Customer", icon: "customer", href: "/customer" },
   { label: "Data Explorer", icon: "database", href: "/data-explorer" },
   { label: "Reports", icon: "assignment", href: "/reports" },
 ];
