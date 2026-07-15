@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { FilterDropdown } from "../overview/Buttons";
+import ExchangeTab from "./ExchangeTab";
+import SegmentsTab from "./SegmentsTab";
+import BehavioralFlowTab from "./BehavioralFlowTab";
 
 /* ----------------------------- data ----------------------------- */
 
@@ -123,12 +126,18 @@ function Header() {
   );
 }
 
-function FilterBar() {
+function FilterBar({ tab }: { tab: Tab }) {
   return (
     <div className="flex flex-wrap items-center gap-4">
       {FILTERS.map((f) => (
         <FilterDropdown key={f} label={f} />
       ))}
+      {tab === "Behavioral Flow" ? (
+        <>
+          <FilterDropdown label="All Customers" />
+          <FilterDropdown label="All Departments" />
+        </>
+      ) : null}
       <div className="ml-auto">
         <FilterDropdown label="Rolling 12 Months" />
       </div>
@@ -356,15 +365,6 @@ function ActionTable({
   );
 }
 
-function PlaceholderTab({ label }: { label: string }) {
-  return (
-    <Card className="flex min-h-[280px] flex-col items-center justify-center gap-1 text-center">
-      <p className="text-base font-semibold text-neutral-800">{label}</p>
-      <p className="text-sm text-neutral-500">This section is coming soon.</p>
-    </Card>
-  );
-}
-
 function BracketingTab() {
   return (
     <>
@@ -407,9 +407,17 @@ export default function CustomerContent() {
     <div className="min-h-screen bg-neutral-0">
       <Header />
       <div className="flex flex-col gap-5 px-4 pb-10 pt-3.5">
-        <FilterBar />
+        <FilterBar tab={tab} />
         <TabBar tab={tab} onChange={setTab} />
-        {tab === "Bracketing" ? <BracketingTab /> : <PlaceholderTab label={tab} />}
+        {tab === "Bracketing" ? (
+          <BracketingTab />
+        ) : tab === "Exchange" ? (
+          <ExchangeTab />
+        ) : tab === "Segments" ? (
+          <SegmentsTab />
+        ) : (
+          <BehavioralFlowTab />
+        )}
       </div>
     </div>
   );
