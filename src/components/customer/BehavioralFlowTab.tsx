@@ -186,7 +186,7 @@ function JourneyExplorer() {
         ) : null}
       </div>
 
-      <div className="mt-4 flex flex-col gap-4">
+      <div data-anim-fade className="mt-4 flex flex-col gap-4">
         <StageBar
           title="1 · Bracketing type"
           segments={stage1}

@@ -1,7 +1,33 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useActionModal } from "./ActionSubmit";
+
+/** Reveal once when scrolled into view; resets on unmount (leave + return). */
+export function useReveal<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || shown) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setShown(true);
+      return;
+    }
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setShown(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.15 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [shown]);
+  return { ref, shown };
+}
 
 // Chart fill colors — official Fuego Returnalyze palette (Figma node 1415:45).
 export const CHART = {
@@ -16,8 +42,13 @@ export const CHART = {
 } as const;
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
+  const { ref, shown } = useReveal<HTMLElement>();
   return (
-    <section className={`rounded-lg border border-neutral-200 bg-neutral-0 p-4 ${className}`}>
+    <section
+      ref={ref}
+      data-reveal={shown ? "in" : "out"}
+      className={`rounded-lg border border-neutral-200 bg-neutral-0 p-4 ${className}`}
+    >
       {children}
     </section>
   );

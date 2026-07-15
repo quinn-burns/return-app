@@ -77,6 +77,7 @@ function ExchangeKind() {
             <span className="w-12 shrink-0 text-sm font-medium text-neutral-800">{t.label}</span>
             <div className="h-5 min-w-0 flex-1 overflow-hidden rounded-[4px] bg-neutral-100">
               <div
+                data-anim-bar
                 className="h-5 rounded-[4px]"
                 style={{ width: `${t.pct}%`, backgroundColor: t.color }}
               />
@@ -109,13 +110,9 @@ function ExchangeOutcome() {
           <span className="size-2.5 rounded-full" style={{ backgroundColor: "#dc2828" }} /> Returned — 33%
         </span>
       </div>
-      <div className="mt-4 flex h-6 w-full overflow-hidden rounded-[4px] text-[11px] font-semibold text-white">
-        <span className="flex items-center justify-center" style={{ width: "67%", backgroundColor: "#059467" }}>
-          67%
-        </span>
-        <span className="flex items-center justify-center" style={{ width: "33%", backgroundColor: "#dc2828" }}>
-          33%
-        </span>
+      <div data-anim-bar className="mt-4 flex h-6 w-full overflow-hidden rounded-[4px]">
+        <span style={{ width: "67%", backgroundColor: "#059467" }} />
+        <span style={{ width: "33%", backgroundColor: "#dc2828" }} />
       </div>
     </Card>
   );
@@ -141,6 +138,7 @@ function ComeBack() {
             </span>
             <div className="h-4 min-w-0 flex-1 overflow-hidden rounded-[4px] bg-neutral-100">
               <div
+                data-anim-bar
                 className="h-4 rounded-[4px] bg-danger-600"
                 style={{ width: `${(s.pct / max) * 100}%` }}
               />

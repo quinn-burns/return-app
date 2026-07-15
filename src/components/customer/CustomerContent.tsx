@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ActionModalProvider } from "./ActionSubmit";
-import { AiInsight, TakeAction } from "./parts";
+import { AiInsight, TakeAction, useReveal } from "./parts";
 import {
   BRAND_OPTS,
   COUNTRY_OPTS,
@@ -155,8 +155,13 @@ function Pill({ change, trend }: { change: string; trend: Trend }) {
 }
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const { ref, shown } = useReveal<HTMLElement>();
   return (
-    <section className={`rounded-lg border border-neutral-200 bg-neutral-0 p-4 ${className}`}>
+    <section
+      ref={ref}
+      data-reveal={shown ? "in" : "out"}
+      className={`rounded-lg border border-neutral-200 bg-neutral-0 p-4 ${className}`}
+    >
       {children}
     </section>
   );
@@ -265,6 +270,7 @@ function TypeBreakdown() {
             <span className="w-12 shrink-0 text-sm font-medium text-neutral-800">{t.label}</span>
             <div className="h-5 min-w-0 flex-1 overflow-hidden rounded-[4px] bg-neutral-100">
               <div
+                data-anim-bar
                 className="h-5 rounded-[4px]"
                 style={{ width: `${t.pct}%`, backgroundColor: t.color }}
               />
@@ -289,13 +295,13 @@ function DivergingProfitBar({ value }: { value: number }) {
     <div className="flex h-6 items-center" aria-hidden="true">
       <div className="flex flex-1 justify-end">
         {positive ? null : (
-          <div className="h-5 rounded-l-[4px] bg-danger-600" style={{ width: `${pct}%` }} />
+          <div data-anim-bar="right" className="h-5 rounded-l-[4px] bg-danger-600" style={{ width: `${pct}%` }} />
         )}
       </div>
       <div className="h-6 w-px bg-neutral-300" />
       <div className="flex flex-1 justify-start">
         {positive ? (
-          <div className="h-5 rounded-r-[4px] bg-success-600" style={{ width: `${pct}%` }} />
+          <div data-anim-bar className="h-5 rounded-r-[4px] bg-success-600" style={{ width: `${pct}%` }} />
         ) : null}
       </div>
     </div>
@@ -363,7 +369,7 @@ function BracketingOutcomes() {
                   {t.keep[2]}% returned
                 </span>
               </div>
-              <div className="flex h-3 w-full overflow-hidden rounded-[4px]">
+              <div data-anim-bar className="flex h-3 w-full overflow-hidden rounded-[4px]">
                 {t.keep.map((p, i) => (
                   <span key={i} style={{ width: `${p}%`, backgroundColor: OUTCOME_LEGEND[i].color }} />
                 ))}

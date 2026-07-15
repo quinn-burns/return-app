@@ -297,6 +297,7 @@ function SegmentImpact({ segments }: { segments: Segment[] }) {
             </span>
             <div className="h-5 min-w-0 flex-1 overflow-hidden rounded-[4px] bg-neutral-100">
               <div
+                data-anim-bar
                 className="h-5 rounded-[4px] bg-warning-500"
                 style={{ width: `${(r.value / max) * 100}%` }}
               />

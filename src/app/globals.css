@@ -91,3 +91,62 @@ body {
   color: var(--color-neutral-800);
   background: var(--color-neutral-0);
 }
+
+/*
+ * Chart entrance animation. A card marks itself data-reveal="in" the first
+ * time it scrolls into view; its bars (data-anim-bar) grow open once. Because
+ * cards unmount on route/tab change, it replays only after leaving and coming
+ * back — never on scroll or re-render within the same view.
+ */
+@keyframes chart-bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+[data-anim-bar] {
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+[data-anim-bar="right"] {
+  transform-origin: right center;
+}
+[data-reveal="in"] [data-anim-bar] {
+  animation: chart-bar-grow 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-anim-bar] {
+    transform: none;
+  }
+  [data-reveal="in"] [data-anim-bar] {
+    animation: none;
+  }
+}
+
+/* Fade-up entrance for charts whose bars carry text (e.g. the flow explorer). */
+@keyframes chart-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+[data-anim-fade] {
+  opacity: 0;
+}
+[data-reveal="in"] [data-anim-fade] {
+  animation: chart-fade-up 0.6s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-anim-fade] {
+    opacity: 1;
+  }
+  [data-reveal="in"] [data-anim-fade] {
+    animation: none;
+  }
+}
