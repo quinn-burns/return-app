@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -49,7 +49,7 @@ function NavLink({
       aria-current={selected ? "page" : undefined}
       title={collapsed ? item.label : undefined}
       className={[
-        "flex h-10 w-full items-center rounded-lg p-2 transition-colors",
+        "flex h-10 w-full shrink-0 items-center rounded-lg p-2 transition-colors",
         collapsed ? "justify-center" : "gap-1",
         selected
           ? "bg-primary-100"
@@ -199,6 +199,24 @@ export default function Sidebar() {
 
   const showCollapsed = isWide ? collapsed : !narrowExpanded;
 
+  // Soft-fade the scrolling nav where it passes under the pinned logo / footer.
+  const navRef = useRef<HTMLElement>(null);
+  const [navFade, setNavFade] = useState({ top: false, bottom: false });
+  const updateNavFade = useCallback(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const top = el.scrollTop > 4;
+    const bottom = el.scrollTop + el.clientHeight < el.scrollHeight - 4;
+    setNavFade((prev) => (prev.top === top && prev.bottom === bottom ? prev : { top, bottom }));
+  }, []);
+  useEffect(() => {
+    updateNavFade();
+    window.addEventListener("resize", updateNavFade);
+    return () => window.removeEventListener("resize", updateNavFade);
+  }, [updateNavFade, showCollapsed]);
+
+  const navMask = `linear-gradient(to bottom, ${navFade.top ? "transparent" : "#000"} 0, #000 22px, #000 calc(100% - 22px), ${navFade.bottom ? "transparent" : "#000"} 100%)`;
+
   return (
     <>
       {/* Reserves the rail width while the sidebar is fixed (narrow screens) */}
@@ -218,7 +236,7 @@ export default function Sidebar() {
 
       <aside
         className={[
-          "fixed inset-y-0 left-0 z-40 h-screen overflow-y-auto overscroll-contain bg-neutral-50 px-4 py-5",
+          "fixed inset-y-0 left-0 z-40 h-screen bg-neutral-50 px-4 py-5",
           "transition-[width,box-shadow] duration-300 ease-in-out",
           "xl:sticky xl:top-0 xl:z-0",
           showCollapsed ? "w-sidebar-collapsed" : "w-sidebar",
@@ -229,7 +247,7 @@ export default function Sidebar() {
               : "shadow-none",
         ].join(" ")}
       >
-       <div className="flex min-h-full flex-col gap-6">
+       <div className="flex h-full flex-col gap-4">
         {/* Logo header */}
         {showCollapsed ? (
           <div className="flex h-20 shrink-0 items-center justify-center py-1">
@@ -263,10 +281,23 @@ export default function Sidebar() {
           </div>
         )}
 
-        {/* Pages */}
-        <nav className="flex min-h-0 w-full flex-1 flex-col justify-between">
-          <div className="flex w-full flex-col gap-2">
-            {MAIN_ITEMS.map((item) => (
+        {/* Scrolling nav — only the tabs scroll, between the pinned logo and footer */}
+        <nav
+          ref={navRef}
+          onScroll={updateNavFade}
+          style={{ maskImage: navMask, WebkitMaskImage: navMask }}
+          className="-mx-1 flex min-h-0 w-full flex-1 flex-col gap-2 overflow-y-auto overscroll-contain px-1"
+        >
+          {MAIN_ITEMS.map((item) => (
+            <NavLink
+              key={item.label}
+              item={item}
+              collapsed={showCollapsed}
+              onNavigate={collapseOverlay}
+            />
+          ))}
+          <div className="mt-2 flex w-full shrink-0 flex-col gap-2 border-t border-neutral-200 pt-4">
+            {UTILITY_ITEMS.map((item) => (
               <NavLink
                 key={item.label}
                 item={item}
@@ -275,42 +306,24 @@ export default function Sidebar() {
               />
             ))}
           </div>
-
-          <div className="flex w-full flex-col gap-4 border-t border-neutral-200 pt-4">
-            <div className="flex w-full flex-col gap-2">
-              {UTILITY_ITEMS.map((item) => (
-                <NavLink
-                  key={item.label}
-                  item={item}
-                  collapsed={showCollapsed}
-                  onNavigate={collapseOverlay}
-                />
-              ))}
-            </div>
-
-            <AiCreditUsage collapsed={showCollapsed} />
-
-            {showCollapsed ? (
-              <div className="flex h-[34px] w-full items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/nav/brand-mark.svg"
-                  alt="Return App"
-                  className="h-auto w-6"
-                />
-              </div>
-            ) : (
-              <div className="flex h-[34px] w-full items-center px-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/nav/brand-logo.svg"
-                  alt="Return App"
-                  className="h-[21px] w-auto"
-                />
-              </div>
-            )}
-          </div>
         </nav>
+
+        {/* Pinned footer — AI credits + brand logo stay at the bottom */}
+        <div className="flex shrink-0 flex-col gap-4">
+          <AiCreditUsage collapsed={showCollapsed} />
+
+          {showCollapsed ? (
+            <div className="flex h-[34px] w-full items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/nav/brand-mark.svg" alt="Return App" className="h-auto w-6" />
+            </div>
+          ) : (
+            <div className="flex h-[34px] w-full items-center px-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/nav/brand-logo.svg" alt="Return App" className="h-[21px] w-auto" />
+            </div>
+          )}
+        </div>
        </div>
       </aside>
     </>
