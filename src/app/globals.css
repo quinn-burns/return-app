@@ -92,22 +92,24 @@ body {
   background: var(--color-neutral-0);
 }
 
-/* Slim scrollbars site-wide (5px); the sidebar nav is slimmer still (3px). */
+/* Main page scrollbar (5px). Inner scroll areas keep the browser default. */
 html {
   scrollbar-width: thin;
   scrollbar-color: var(--color-neutral-300) transparent;
 }
-::-webkit-scrollbar {
+html::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
-::-webkit-scrollbar-track {
+html::-webkit-scrollbar-track {
   background: transparent;
 }
-::-webkit-scrollbar-thumb {
+html::-webkit-scrollbar-thumb {
   background-color: var(--color-neutral-300);
   border-radius: 9999px;
 }
+
+/* Sidebar nav — slimmer 2px, opt-in via the class. */
 .thin-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: var(--color-neutral-300) transparent;
@@ -115,6 +117,9 @@ html {
 .thin-scrollbar::-webkit-scrollbar {
   width: 2px;
   height: 2px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 .thin-scrollbar::-webkit-scrollbar-thumb {
   background-color: var(--color-neutral-300);
