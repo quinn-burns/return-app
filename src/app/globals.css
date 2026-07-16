@@ -92,6 +92,23 @@ body {
   background: var(--color-neutral-0);
 }
 
+/* Slim scrollbar for the sidebar nav (and any opt-in scroll area). */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-neutral-300) transparent;
+}
+.thin-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--color-neutral-300);
+  border-radius: 9999px;
+}
+
 /*
  * Chart entrance animation. A card marks itself data-reveal="in" the first
  * time it scrolls into view; its bars (data-anim-bar) grow open once. Because

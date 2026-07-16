@@ -286,7 +286,7 @@ export default function Sidebar() {
           ref={navRef}
           onScroll={updateNavFade}
           style={{ maskImage: navMask, WebkitMaskImage: navMask }}
-          className="-mx-1 flex min-h-0 w-full flex-1 flex-col gap-2 overflow-y-auto overscroll-contain px-1"
+          className="thin-scrollbar -mx-1 flex min-h-0 w-full flex-1 flex-col gap-2 overflow-y-auto overscroll-contain px-1"
         >
           {MAIN_ITEMS.map((item) => (
             <NavLink

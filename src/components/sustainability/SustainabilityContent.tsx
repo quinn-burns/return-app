@@ -330,10 +330,10 @@ export default function SustainabilityContent() {
           <MissionBanner />
           <AiInsight>
             Returns generated an estimated{" "}
-            <span className="font-semibold text-neutral-800">1,240 t CO₂</span>{" "}this period — 63% of
+            <span className="font-semibold text-neutral-800">1,240 t CO₂e</span>{" "}this period — 63% of
             it from return shipping alone. Bringing Footwear&rsquo;s size bracketing down to the
             category average would avoid roughly{" "}
-            <span className="font-semibold text-neutral-800">180 t CO₂ a year</span>{" "}(about 39 gas
+            <span className="font-semibold text-neutral-800">180 t CO₂e a year</span>{" "}(about 39 gas
             cars) and closes 4 points of the gap to your 2030 Scope 3 target.
           </AiInsight>
           <KpiStrip items={KPIS} cols={5} />
