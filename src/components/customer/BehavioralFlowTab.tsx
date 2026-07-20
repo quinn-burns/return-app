@@ -10,9 +10,9 @@ const TOTAL = 20806;
 // split = [Returned All, Kept Some, Kept All]
 const BRACK = [
   { id: "Size", color: "#4169e1", value: 5200, split: [0.18, 0.42, 0.4] },
-  { id: "Color", color: "#27cba7", value: 4800, split: [0.1, 0.3, 0.6] },
-  { id: "Both", color: "#1d97ff", value: 2100, split: [0.22, 0.45, 0.33] },
-  { id: "No Bracketing", color: "#ababab", value: 8706, split: [0.2, 0.38, 0.42] },
+  { id: "Color", color: "#85a1ff", value: 4800, split: [0.1, 0.3, 0.6] },
+  { id: "Both", color: "#26398c", value: 2100, split: [0.22, 0.45, 0.33] },
+  { id: "No Bracketing", color: "#c7d4ff", value: 8706, split: [0.2, 0.38, 0.42] },
 ];
 // back = [came back, did not]
 const OUTCOMES = [
@@ -21,11 +21,11 @@ const OUTCOMES = [
   { id: "Kept All", color: "#059467", idx: 2, back: [0.82, 0.18] },
 ];
 const DEPTS = [
-  { id: "W Denim", frac: 0.3, color: "#4169e1" },
-  { id: "W Tops", frac: 0.24, color: "#1d97ff" },
-  { id: "Accessories", frac: 0.18, color: "#27cba7" },
-  { id: "Mens", frac: 0.16, color: "#85a1ff" },
-  { id: "Other", frac: 0.12, color: "#ababab" },
+  { id: "W Denim", frac: 0.3, color: "#d97706" },
+  { id: "W Tops", frac: 0.24, color: "#f59f0a" },
+  { id: "Accessories", frac: 0.18, color: "#fbbf24" },
+  { id: "Mens", frac: 0.16, color: "#fcd34d" },
+  { id: "Other", frac: 0.12, color: "#fde68a" },
 ];
 
 type Seg = { id: string; color: string; count: number };
@@ -308,9 +308,9 @@ const S_BRACKETS: { id: string; label: string; share: number; color: string; out
   { id: "single", label: "No Bracketing", share: 0.59, color: "#c7d4ff", out: { retall: 0.22, keptsome: 0, keptall: 0.78 } },
 ];
 const S_OUTCOMES = [
-  { id: "retall", label: "Returned All", color: "#ef4444", repeat: 0.41, val: -14 },
+  { id: "retall", label: "Returned All", color: "#dc2828", repeat: 0.41, val: -14 },
   { id: "keptsome", label: "Kept Some", color: "#f59f0a", repeat: 0.58, val: 104 },
-  { id: "keptall", label: "Kept All", color: "#10b981", repeat: 0.74, val: 188 },
+  { id: "keptall", label: "Kept All", color: "#059467", repeat: 0.74, val: 188 },
 ];
 const S_DEPTS = [
   { id: "denim", label: "W Denim", share: 0.34, color: "#d97706", val: 150 },
@@ -337,9 +337,9 @@ const S_LEGEND = [
   { label: "Color", color: "#85a1ff" },
   { label: "Size + Color", color: "#26398c" },
   { label: "No Bracketing", color: "#c7d4ff" },
-  { label: "Returned All", color: "#ef4444", divider: true },
+  { label: "Returned All", color: "#dc2828", divider: true },
   { label: "Kept Some", color: "#f59f0a" },
-  { label: "Kept All", color: "#10b981" },
+  { label: "Kept All", color: "#059467" },
   { label: "Next Purchase", color: "#4169e1", divider: true },
   { label: "Next Dept", color: "#f59f0a" },
 ];
