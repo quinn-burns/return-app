@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { FilterButton, FilterDropdown, IconButton } from "../overview/Buttons";
+import { BRAND_OPTS, PERIOD_OPTS, FilterSelect } from "../customer/filters";
 import { SUBMITTED_ACTIONS_KEY, type SubmittedAction } from "../customer/ActionSubmit";
 import CustomizeMenu from "../overview/CustomizeMenu";
 import ActionDetail from "./ActionDetail";
@@ -9,13 +10,8 @@ import CreateActionModal from "./CreateActionModal";
 
 /* ----------------------------- data ----------------------------- */
 
-const FILTERS = [
-  "All Brands",
-  "All Regions",
-  "All Channels",
-  "All Categories",
-  "Rolling 12 Months",
-];
+// Brand and period are real selects; the rest stay static for now.
+const FILTERS = ["All Regions", "All Channels", "All Categories"];
 
 type Kind = "Action" | "Task";
 type Card = {
@@ -163,9 +159,11 @@ function Header() {
 function FilterBar() {
   return (
     <div className="flex flex-wrap items-center gap-4">
+      <FilterSelect label="Brand" options={BRAND_OPTS} />
       {FILTERS.map((f) => (
         <FilterDropdown key={f} label={f} />
       ))}
+      <FilterSelect label="Period" options={PERIOD_OPTS} />
       <div className="ml-auto flex items-center gap-4">
         <FilterButton label="Apply Filters" disabled />
         <FilterButton label="Reset" disabled />
