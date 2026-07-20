@@ -1,8 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { FilterButton, FilterDropdown, IconButton } from "../overview/Buttons";
-import { BRAND_OPTS, PERIOD_OPTS, FilterSelect } from "../customer/filters";
+import { FilterDropdown, IconButton } from "../overview/Buttons";
+import {
+  BRAND_OPTS,
+  PERIOD_OPTS,
+  FilterSelect,
+  FilterBarProvider,
+  ApplyFiltersButton,
+  ResetFiltersButton,
+} from "../customer/filters";
 import CreateActionModal from "../actions/CreateActionModal";
 import DriverDetail from "./DriverDetail";
 
@@ -74,17 +81,19 @@ function Header() {
 
 function FilterBar() {
   return (
-    <div className="flex flex-wrap items-center gap-4">
-      <FilterSelect label="Brand" options={BRAND_OPTS} />
-      {FILTERS.map((f) => (
-        <FilterDropdown key={f} label={f} />
-      ))}
-      <FilterSelect label="Period" options={PERIOD_OPTS} />
-      <div className="ml-auto flex items-center gap-4">
-        <FilterButton label="Apply Filters" disabled />
-        <FilterButton label="Reset" disabled />
+    <FilterBarProvider>
+      <div className="flex flex-wrap items-center gap-4">
+        <FilterSelect label="Brand" options={BRAND_OPTS} />
+        {FILTERS.map((f) => (
+          <FilterDropdown key={f} label={f} />
+        ))}
+        <FilterSelect label="Period" options={PERIOD_OPTS} />
+        <div className="ml-auto flex items-center gap-4">
+          <ApplyFiltersButton />
+          <ResetFiltersButton />
+        </div>
       </div>
-    </div>
+    </FilterBarProvider>
   );
 }
 

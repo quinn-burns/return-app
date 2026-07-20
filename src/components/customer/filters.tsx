@@ -1,6 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { FilterButton } from "../overview/Buttons";
 
 export const BRAND_OPTS = ["All Brands", "Caterpillar", "Chaco", "Merrell", "Saucony", "Wolverine"];
 export const COUNTRY_OPTS = ["All Countries", "UK", "US"];
@@ -21,18 +30,76 @@ export const PERIOD_OPTS = [
 ];
 
 /**
+ * Shared state for one filter bar: tracks whether any select differs from its
+ * preset (so Apply Filters can light up) and lets Reset clear them all.
+ */
+type FilterBarCtx = {
+  report: (id: string, nonDefault: boolean) => void;
+  resetSignal: number;
+  pending: boolean;
+  anyDirty: boolean;
+  apply: () => void;
+  reset: () => void;
+};
+const FilterBarContext = createContext<FilterBarCtx | null>(null);
+
+export function FilterBarProvider({ children }: { children: ReactNode }) {
+  const [dirty, setDirty] = useState<Record<string, boolean>>({});
+  const [pending, setPending] = useState(false);
+  const [resetSignal, setResetSignal] = useState(0);
+  const report = useCallback((id: string, nonDefault: boolean) => {
+    setDirty((prev) => (prev[id] === nonDefault ? prev : { ...prev, [id]: nonDefault }));
+    setPending(true);
+  }, []);
+  const apply = useCallback(() => setPending(false), []);
+  const reset = useCallback(() => {
+    setDirty({});
+    setPending(false);
+    setResetSignal((s) => s + 1);
+  }, []);
+  const anyDirty = useMemo(() => Object.values(dirty).some(Boolean), [dirty]);
+  const value = useMemo(
+    () => ({ report, resetSignal, pending, anyDirty, apply, reset }),
+    [report, resetSignal, pending, anyDirty, apply, reset],
+  );
+  return <FilterBarContext.Provider value={value}>{children}</FilterBarContext.Provider>;
+}
+
+/** Apply Filters lights up primary once a real filter is chosen. */
+export function ApplyFiltersButton() {
+  const ctx = useContext(FilterBarContext);
+  return (
+    <FilterButton label="Apply Filters" disabled={!ctx?.pending} onClick={() => ctx?.apply()} />
+  );
+}
+
+export function ResetFiltersButton() {
+  const ctx = useContext(FilterBarContext);
+  return <FilterButton label="Reset" disabled={!ctx?.anyDirty} onClick={() => ctx?.reset()} />;
+}
+
+/**
  * Working select styled to match the static FilterDropdown used on Overview,
  * so every filter bar in the app reads the same. The label names the control
  * for assistive tech; the option text ("All Brands") is the visible label.
  */
 export function FilterSelect({ label, options }: { label: string; options: string[] }) {
   const [value, setValue] = useState(options[0]);
+  const ctx = useContext(FilterBarContext);
+  // Snap back to the preset when the surrounding bar is reset.
+  useEffect(() => {
+    setValue(options[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctx?.resetSignal]);
   return (
     <div className="relative flex h-10 min-w-[160px] flex-1">
       <select
         aria-label={label}
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => {
+          setValue(e.target.value);
+          ctx?.report(label, e.target.value !== options[0]);
+        }}
         className="h-10 w-full appearance-none truncate rounded-lg border border-neutral-200 bg-neutral-0 pl-3 pr-9 text-sm text-neutral-800 transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-600/40"
       >
         {options.map((o) => (

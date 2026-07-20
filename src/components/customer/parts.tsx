@@ -132,10 +132,11 @@ export function InsightLink({ label }: { label: string }) {
   );
 }
 
-export function ExportButton() {
+export function ExportButton({ onClick }: { onClick?: () => void }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className="flex shrink-0 items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700"
     >
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">

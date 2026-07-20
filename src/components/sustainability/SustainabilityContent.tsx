@@ -1,9 +1,17 @@
 "use client";
 
-import { FilterButton } from "../overview/Buttons";
 import { ActionModalProvider } from "../customer/ActionSubmit";
 import { AiInsight, Card, CardHeading, ExportButton, TakeAction } from "../customer/parts";
-import { BRAND_OPTS, CATEGORY_OPTS, COUNTRY_OPTS, PERIOD_OPTS, FilterSelect } from "../customer/filters";
+import {
+  BRAND_OPTS,
+  CATEGORY_OPTS,
+  COUNTRY_OPTS,
+  PERIOD_OPTS,
+  FilterSelect,
+  FilterBarProvider,
+  ApplyFiltersButton,
+  ResetFiltersButton,
+} from "../customer/filters";
 
 /* ----------------------------- data ----------------------------- */
 
@@ -154,16 +162,18 @@ function Header() {
 
 function FilterBar() {
   return (
-    <div className="flex flex-wrap items-center gap-4">
-      <FilterSelect label="Brand" options={BRAND_OPTS} />
-      <FilterSelect label="Country" options={COUNTRY_OPTS} />
-      <FilterSelect label="Product Category" options={CATEGORY_OPTS} />
-      <FilterSelect label="Period" options={PERIOD_OPTS} />
-      <div className="ml-auto flex items-center gap-4">
-        <FilterButton label="Apply Filters" disabled />
-        <FilterButton label="Reset" disabled />
+    <FilterBarProvider>
+      <div className="flex flex-wrap items-center gap-4">
+        <FilterSelect label="Brand" options={BRAND_OPTS} />
+        <FilterSelect label="Country" options={COUNTRY_OPTS} />
+        <FilterSelect label="Product Category" options={CATEGORY_OPTS} />
+        <FilterSelect label="Period" options={PERIOD_OPTS} />
+        <div className="ml-auto flex items-center gap-4">
+          <ApplyFiltersButton />
+          <ResetFiltersButton />
+        </div>
       </div>
-    </div>
+    </FilterBarProvider>
   );
 }
 

@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { FilterButton } from "../overview/Buttons";
 import { ActionModalProvider } from "./ActionSubmit";
-import { AiInsight, TakeAction, useReveal } from "./parts";
+import { AiInsight, Donut, TakeAction, useReveal } from "./parts";
 import {
   BRAND_OPTS,
   COUNTRY_OPTS,
@@ -12,6 +11,9 @@ import {
   DEPARTMENT_OPTS,
   PERIOD_OPTS,
   FilterSelect,
+  FilterBarProvider,
+  ApplyFiltersButton,
+  ResetFiltersButton,
 } from "./filters";
 import ExchangeTab from "./ExchangeTab";
 import SegmentsTab from "./SegmentsTab";
@@ -194,22 +196,24 @@ function Header() {
 
 function FilterBar({ tab }: { tab: Tab }) {
   return (
-    <div className="flex flex-wrap items-center gap-4">
-      <FilterSelect label="Brand" options={BRAND_OPTS} />
-      <FilterSelect label="Country" options={COUNTRY_OPTS} />
-      <FilterSelect label="Product Category" options={CATEGORY_OPTS} />
-      {tab === "Behavioral Flow" ? (
-        <>
-          <FilterSelect label="Customer Type" options={CUSTOMER_TYPE_OPTS} />
-          <FilterSelect label="1st Purchase Department" options={DEPARTMENT_OPTS} />
-        </>
-      ) : null}
-      <FilterSelect label="Period" options={PERIOD_OPTS} />
-      <div className="ml-auto flex items-center gap-4">
-        <FilterButton label="Apply Filters" disabled />
-        <FilterButton label="Reset" disabled />
+    <FilterBarProvider>
+      <div className="flex flex-wrap items-center gap-4">
+        <FilterSelect label="Brand" options={BRAND_OPTS} />
+        <FilterSelect label="Country" options={COUNTRY_OPTS} />
+        <FilterSelect label="Product Category" options={CATEGORY_OPTS} />
+        {tab === "Behavioral Flow" ? (
+          <>
+            <FilterSelect label="Customer Type" options={CUSTOMER_TYPE_OPTS} />
+            <FilterSelect label="1st Purchase Department" options={DEPARTMENT_OPTS} />
+          </>
+        ) : null}
+        <FilterSelect label="Period" options={PERIOD_OPTS} />
+        <div className="ml-auto flex items-center gap-4">
+          <ApplyFiltersButton />
+          <ResetFiltersButton />
+        </div>
       </div>
-    </div>
+    </FilterBarProvider>
   );
 }
 
@@ -263,28 +267,36 @@ function KpiRow() {
 }
 
 function TypeBreakdown() {
+  // Shares overlap (an order can bracket on both), so normalize for the ring
+  // while the legend keeps the true per-dimension percentages.
+  const total = TYPE_BREAKDOWN.reduce((s, t) => s + t.pct, 0);
+  const arcs = TYPE_BREAKDOWN.map((t) => ({
+    label: t.label,
+    pct: (t.pct / total) * 100,
+    color: t.color,
+  }));
   return (
     <Card>
       <CardHeading
         title="What kind of bracketing?"
-        subtitle={`Share of the ${BRACKETED_TOTAL} bracketed orders that involve each dimension.`}
+        subtitle="Size = same style, different sizes. Color = same style, different colors."
       />
-      <div className="mt-4 flex flex-col gap-3">
-        {TYPE_BREAKDOWN.map((t) => (
-          <div key={t.label} className="flex items-center gap-3">
-            <span className="w-12 shrink-0 text-sm font-medium text-neutral-800">{t.label}</span>
-            <div className="h-5 min-w-0 flex-1 overflow-hidden rounded-[4px] bg-neutral-100">
-              <div
-                data-anim-bar
-                className="h-5 rounded-[4px]"
-                style={{ width: `${t.pct}%`, backgroundColor: t.color }}
+      <div className="mt-4 flex flex-col items-center gap-5 sm:flex-row">
+        <Donut segments={arcs} centerTop={BRACKETED_TOTAL} centerBottom="orders" />
+        <ul className="flex min-w-0 flex-1 flex-col gap-2">
+          {TYPE_BREAKDOWN.map((t) => (
+            <li key={t.label} className="flex items-center gap-2 text-sm">
+              <span
+                className="size-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: t.color }}
               />
-            </div>
-            <span className="w-28 shrink-0 text-right text-xs text-neutral-600">
-              <span className="font-semibold text-neutral-800">{t.pct}%</span> · {t.orders} orders
-            </span>
-          </div>
-        ))}
+              <span className="font-medium text-neutral-800">{t.label}</span>
+              <span className="text-neutral-600">
+                — {t.pct}% · {t.orders} orders
+              </span>
+            </li>
+          ))}
+        </ul>
       </div>
       <p className="mt-3 text-[11px] leading-4 text-neutral-600">
         Orders can be bracketed on both size and color, so shares add to more than 100%.

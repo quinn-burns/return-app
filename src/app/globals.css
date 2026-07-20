@@ -156,6 +156,44 @@ html::-webkit-scrollbar {
   }
 }
 
+/* Radix toast enter/exit + swipe (slides in from the right). */
+@keyframes toast-in {
+  from {
+    transform: translateX(calc(100% + 1rem));
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes toast-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(calc(100% + 1rem));
+    opacity: 0;
+  }
+}
+.toast-root[data-state="open"] {
+  animation: toast-in 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.toast-root[data-state="closed"] {
+  animation: toast-out 0.18s ease-in;
+}
+.toast-root[data-swipe="move"] {
+  transform: translateX(var(--radix-toast-swipe-move-x));
+}
+.toast-root[data-swipe="cancel"] {
+  transform: translateX(0);
+  transition: transform 0.2s ease-out;
+}
+.toast-root[data-swipe="end"] {
+  animation: toast-out 0.18s ease-in;
+}
+
 /*
  * Chart entrance animation. A card marks itself data-reveal="in" the first
  * time it scrolls into view; its bars (data-anim-bar) grow open once. Because

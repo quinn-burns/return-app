@@ -55,14 +55,17 @@ export function FilterDropdown({ label }: { label: string }) {
 export function FilterButton({
   label,
   disabled = false,
+  onClick,
 }: {
   label: string;
   disabled?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <button
       type="button"
       disabled={disabled}
+      onClick={onClick}
       className={[
         "flex h-10 shrink-0 items-center justify-center rounded-lg px-4 text-sm font-medium transition-colors",
         disabled

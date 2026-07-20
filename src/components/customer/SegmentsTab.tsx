@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Card, CardHeading, ExportButton, KpiStrip } from "./parts";
+import { ExportToastProvider, useExportToast } from "./ExportToast";
 
 /* ----------------------------- data ----------------------------- */
 
@@ -314,6 +315,7 @@ function SegmentImpact({ segments }: { segments: Segment[] }) {
 }
 
 function SegmentSection({ segment }: { segment: Segment }) {
+  const showToast = useExportToast();
   return (
     <Card>
       <div className="flex items-start justify-between gap-3">
@@ -321,7 +323,7 @@ function SegmentSection({ segment }: { segment: Segment }) {
           <h2 className="text-lg font-bold text-neutral-800">{segment.name}</h2>
           <p className="text-xs text-neutral-600">{segment.thresholds}</p>
         </div>
-        <ExportButton />
+        <ExportButton onClick={showToast} />
       </div>
       <div className="mt-3">
         <KpiStrip items={segment.summary} cols={6} />
@@ -366,7 +368,7 @@ export default function SegmentsTab() {
     );
   const shown = SEGMENTS.filter((s) => selected.includes(s.name));
   return (
-    <>
+    <ExportToastProvider>
       <div className="flex flex-wrap items-end gap-4">
         <label className="flex flex-col gap-1 text-xs text-neutral-600">
           Segments
@@ -389,6 +391,6 @@ export default function SegmentsTab() {
           ))}
         </>
       )}
-    </>
+    </ExportToastProvider>
   );
 }
