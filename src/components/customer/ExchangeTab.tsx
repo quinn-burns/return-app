@@ -14,10 +14,9 @@ const KPIS = [
 
 const KIND = [
   // Matches the "What kind of bracketing?" donut on the Bracketing tab.
-  // Blue is reserved for the come-back chart, and green/red carry the outcome
-  // meaning — so the two nominal categories use the warm ramp's outer steps.
-  { label: "Size", pct: 58, color: "#b45309" },
-  { label: "Color", pct: 21, color: "#fbbf24" },
+  // Brand sky + teal. Primary blue stays reserved for the come-back chart.
+  { label: "Size", pct: 58, color: "#1d97ff" },
+  { label: "Color", pct: 21, color: "#27cba7" },
 ];
 
 const COME_BACK = [

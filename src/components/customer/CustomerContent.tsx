@@ -95,8 +95,8 @@ const TYPE_BREAKDOWN = [
   // Nominal categories: primary blue + warning-600 orange (a deeper orange than
   // the amber used for "Kept some", so the two stay distinguishable).
   // The Exchange "what kind?" chart uses these same three colors.
-  { label: "Size", pct: 65, orders: "111K", color: "#b45309" },
-  { label: "Color", pct: 51, orders: "87K", color: "#fbbf24" },
+  { label: "Size", pct: 65, orders: "111K", color: "#1d97ff" },
+  { label: "Color", pct: 51, orders: "87K", color: "#27cba7" },
   { label: "Other", pct: 2, orders: "3K", color: "#ababab" },
 ];
 
