@@ -91,11 +91,11 @@ const KPIS: { label: string; value: string; change: string; trend: Trend }[] = [
 // both size and color, so these shares overlap and add to more than 100%.
 const BRACKETED_TOTAL = "171K";
 const TYPE_BREAKDOWN = [
-  // Nominal categories, so they use a qualitative palette in hue space the app
-  // doesn't use semantically — green/amber/red stay reserved for outcomes.
-  // Same three colors are used by the Exchange "what kind?" chart.
+  // Nominal categories: primary blue + brand teal, the two style-guide hues not
+  // already carrying meaning (green/amber/red are reserved for outcomes).
+  // The Exchange "what kind?" chart uses these same three colors.
   { label: "Size", pct: 65, orders: "111K", color: "#4169e1" },
-  { label: "Color", pct: 51, orders: "87K", color: "#a855f7" },
+  { label: "Color", pct: 51, orders: "87K", color: "#27cba7" },
   { label: "Other", pct: 2, orders: "3K", color: "#ababab" },
 ];
 
