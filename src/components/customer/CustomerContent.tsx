@@ -91,9 +91,11 @@ const KPIS: { label: string; value: string; change: string; trend: Trend }[] = [
 // both size and color, so these shares overlap and add to more than 100%.
 const BRACKETED_TOTAL = "171K";
 const TYPE_BREAKDOWN = [
-  { label: "Size", pct: 65, orders: "111K", color: "#4169e1" },
-  { label: "Color", pct: 51, orders: "87K", color: "#85a1ff" },
-  { label: "Other", pct: 2, orders: "3K", color: "#c7d4ff" },
+  // Typed by profitability so the mix reads the same way as the profit and
+  // outcome charts: Size loses money (red), Color is profitable (green).
+  { label: "Size", pct: 65, orders: "111K", color: "#dc2828" },
+  { label: "Color", pct: 51, orders: "87K", color: "#059467" },
+  { label: "Other", pct: 2, orders: "3K", color: "#ababab" },
 ];
 
 // Profit and outcome per bracketing type, ordered best → worst profit per order.

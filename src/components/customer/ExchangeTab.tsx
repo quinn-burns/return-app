@@ -12,8 +12,8 @@ const KPIS = [
 ];
 
 const KIND = [
-  { label: "Size", pct: 58, color: "#4169e1" },
-  { label: "Color", pct: 21, color: "#85a1ff" },
+  { label: "Size", pct: 58, color: "#dc2828" },
+  { label: "Color", pct: 21, color: "#059467" },
 ];
 
 // Ombre tied to the Returned red — the worst re-return rate is the deepest.
