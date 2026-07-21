@@ -300,7 +300,7 @@ function SegmentImpact({ segments }: { segments: Segment[] }) {
             <div className="h-5 min-w-0 flex-1 overflow-hidden rounded-[4px] bg-neutral-100">
               <div
                 data-anim-bar
-                className="h-5 rounded-[4px] bg-warning-500"
+                className="h-5 rounded-[4px] bg-primary-600"
                 style={{ width: `${(r.value / max) * 100}%` }}
               />
             </div>
@@ -346,7 +346,7 @@ function SegmentSection({ segment }: { segment: Segment }) {
               <tr key={c.id} className="border-b border-primary-50 align-top last:border-b-0">
                 <td className="whitespace-nowrap py-3 pr-3 font-medium text-neutral-800">{c.id}</td>
                 <td className="whitespace-nowrap px-3 py-3 text-right text-neutral-700">{c.revenue}</td>
-                <td className="whitespace-nowrap px-3 py-3 text-right font-medium text-warning-600">
+                <td className="whitespace-nowrap px-3 py-3 text-right font-medium text-primary-600">
                   {c.returnRevenue}
                 </td>
                 <td className="px-3 py-3 text-neutral-600">{c.depts}</td>

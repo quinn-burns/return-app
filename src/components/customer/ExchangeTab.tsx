@@ -164,7 +164,7 @@ function ComeBack() {
       <div className="flex flex-col gap-1">
         <h2 className="text-base font-semibold text-neutral-800">Where do they come back?</h2>
         <p className="flex flex-wrap items-center gap-1.5 text-xs text-neutral-600">
-          <span className="size-2.5 rounded-full" style={{ backgroundColor: "#dc2828" }} />
+          <span className="size-2.5 rounded-full" style={{ backgroundColor: "#4169e1" }} />
           Breaking down the <span className="font-semibold text-neutral-700">Returned — 33%</span> ·
           top styles, by re-return rate × volume
         </p>
@@ -178,7 +178,7 @@ function ComeBack() {
             <div className="h-4 min-w-0 flex-1 overflow-hidden rounded-[4px] bg-neutral-100">
               <div
                 data-anim-bar
-                className="h-4 rounded-[4px] bg-danger-600"
+                className="h-4 rounded-[4px] bg-primary-600"
                 style={{ width: `${(s.pct / max) * 100}%` }}
               />
             </div>
