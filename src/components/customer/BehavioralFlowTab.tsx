@@ -337,22 +337,22 @@ function AllPaths() {
 
 const SANKEY_TOTAL = 24318;
 const S_BRACKETS: { id: string; label: string; share: number; color: string; out: Record<string, number> }[] = [
-  { id: "size", label: "Size", share: 0.22, color: "#4169e1", out: { retall: 0.22, keptsome: 0.3, keptall: 0.48 } },
-  { id: "color", label: "Color", share: 0.11, color: "#85a1ff", out: { retall: 0.18, keptsome: 0.27, keptall: 0.55 } },
-  { id: "both", label: "Size + Color", share: 0.08, color: "#26398c", out: { retall: 0.25, keptsome: 0.45, keptall: 0.3 } },
+  { id: "size", label: "Size", share: 0.22, color: "#0729a5", out: { retall: 0.22, keptsome: 0.3, keptall: 0.48 } },
+  { id: "color", label: "Color", share: 0.11, color: "#4169e1", out: { retall: 0.18, keptsome: 0.27, keptall: 0.55 } },
+  { id: "both", label: "Size + Color", share: 0.08, color: "#85a1ff", out: { retall: 0.25, keptsome: 0.45, keptall: 0.3 } },
   { id: "single", label: "No Bracketing", share: 0.59, color: "#c7d4ff", out: { retall: 0.22, keptsome: 0, keptall: 0.78 } },
 ];
 const S_OUTCOMES = [
-  { id: "retall", label: "Returned All", color: "#dc2828", repeat: 0.41, val: -14 },
-  { id: "keptsome", label: "Kept Some", color: "#f59f0a", repeat: 0.58, val: 104 },
-  { id: "keptall", label: "Kept All", color: "#059467", repeat: 0.74, val: 188 },
+  { id: "retall", label: "Returned All", color: "#0f7a63", repeat: 0.41, val: -14 },
+  { id: "keptsome", label: "Kept Some", color: "#27cba7", repeat: 0.58, val: 104 },
+  { id: "keptall", label: "Kept All", color: "#9ce6d6", repeat: 0.74, val: 188 },
 ];
 const S_DEPTS = [
-  { id: "denim", label: "W Denim", share: 0.34, color: "#d97706", val: 150 },
-  { id: "tops", label: "W Tops", share: 0.28, color: "#f59f0a", val: 96 },
-  { id: "acc", label: "Accessories", share: 0.19, color: "#fbbf24", val: 54 },
-  { id: "mens", label: "Mens", share: 0.11, color: "#fcd34d", val: 128 },
-  { id: "other", label: "Other", share: 0.08, color: "#fde68a", val: 72 },
+  { id: "denim", label: "W Denim", share: 0.34, color: "#b45309", val: 150 },
+  { id: "tops", label: "W Tops", share: 0.28, color: "#d97706", val: 96 },
+  { id: "acc", label: "Accessories", share: 0.19, color: "#f59f0a", val: 54 },
+  { id: "mens", label: "Mens", share: 0.11, color: "#fbbf24", val: 128 },
+  { id: "other", label: "Other", share: 0.08, color: "#fcd34d", val: 72 },
 ];
 
 const sFmt = (n: number) => Math.round(n).toLocaleString();
@@ -367,16 +367,41 @@ function sMoney(v: number) {
 type SN = { id: string; label: string; c: string; v: number; x: number; y0: number; y1: number };
 type Tip = { title: string; cust: number; avg: number };
 
-const S_LEGEND = [
-  { label: "Size", color: "#4169e1" },
-  { label: "Color", color: "#85a1ff" },
-  { label: "Size + Color", color: "#26398c" },
-  { label: "No Bracketing", color: "#c7d4ff" },
-  { label: "Returned All", color: "#dc2828", divider: true },
-  { label: "Kept Some", color: "#f59f0a" },
-  { label: "Kept All", color: "#059467" },
-  { label: "Next Purchase", color: "#4169e1", divider: true },
-  { label: "Next Dept", color: "#f59f0a" },
+const S_LEGEND_GROUPS = [
+  {
+    stage: "Bracketing Type",
+    items: [
+      { label: "Size", color: "#0729a5" },
+      { label: "Color", color: "#4169e1" },
+      { label: "Size + Color", color: "#85a1ff" },
+      { label: "No Bracketing", color: "#c7d4ff" },
+    ],
+  },
+  {
+    stage: "First Order",
+    items: [
+      { label: "Returned All", color: "#0f7a63" },
+      { label: "Kept Some", color: "#27cba7" },
+      { label: "Kept All", color: "#9ce6d6" },
+    ],
+  },
+  {
+    stage: "Next Purchase?",
+    items: [
+      { label: "Next Purchase", color: "#545454" },
+      { label: "No Next Purchase", color: "#b8b8b8" },
+    ],
+  },
+  {
+    stage: "Next Dept",
+    items: [
+      { label: "W Denim", color: "#b45309" },
+      { label: "W Tops", color: "#d97706" },
+      { label: "Accessories", color: "#f59f0a" },
+      { label: "Mens", color: "#fbbf24" },
+      { label: "Other", color: "#fcd34d" },
+    ],
+  },
 ];
 
 function Sankey() {
@@ -384,6 +409,7 @@ function Sankey() {
     null,
   );
   const [tip, setTip] = useState<Tip | null>(null);
+  const [focus, setFocus] = useState<string | null>(null);
 
   const W = 1240;
   const H = 470;
@@ -419,8 +445,8 @@ function Sankey() {
   );
   const colC = stack(
     [
-      { id: "next", label: "Next Purchase", c: "#4169e1", v: repeatN },
-      { id: "norep", label: "No Next Purchase", c: "#c7d4ff", v: norepN },
+      { id: "next", label: "Next Purchase", c: "#545454", v: repeatN },
+      { id: "norep", label: "No Next Purchase", c: "#b8b8b8", v: norepN },
     ],
     cols[2],
   );
@@ -458,8 +484,8 @@ function Sankey() {
   );
   S_OUTCOMES.forEach((o, oi) => {
     const tt = outTot[oi];
-    links.push({ src: o.id, dst: "next", v: tt * o.repeat, color: "#4169e1", avgVal: o.val + avgDept });
-    links.push({ src: o.id, dst: "norep", v: tt * (1 - o.repeat), color: "#c7d4ff", avgVal: o.val });
+    links.push({ src: o.id, dst: "next", v: tt * o.repeat, color: "#545454", avgVal: o.val + avgDept });
+    links.push({ src: o.id, dst: "norep", v: tt * (1 - o.repeat), color: "#b8b8b8", avgVal: o.val });
   });
   S_DEPTS.forEach((d) =>
     links.push({ src: "next", dst: d.id, v: repeatN * d.share, color: d.color, avgVal: avgFirst + d.val }),
@@ -487,6 +513,16 @@ function Sankey() {
     };
   });
 
+  // Clicking a node focuses it: its own flows stay lit, everything else dims.
+  const linked = new Set<string>();
+  if (focus) {
+    linked.add(focus);
+    links.forEach((l) => {
+      if (l.src === focus) linked.add(l.dst);
+      if (l.dst === focus) linked.add(l.src);
+    });
+  }
+
   const headers = [
     { x: cols[0], label: "Bracketing Type" },
     { x: cols[1], label: "First Order" },
@@ -496,6 +532,20 @@ function Sankey() {
 
   return (
     <div>
+      <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+        {S_LEGEND_GROUPS.map((g) => (
+          <div key={g.stage} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="text-[11px] font-semibold text-neutral-700">{g.stage}</span>
+            {g.items.map((it) => (
+              <span key={it.label} className="flex items-center gap-1.5 text-[11px] text-neutral-600">
+                <span className="size-2.5 rounded-[3px]" style={{ backgroundColor: it.color }} />
+                {it.label}
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+
       <svg
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
@@ -521,7 +571,16 @@ function Sankey() {
           </text>
         ))}
         {ribbons.map((r, i) => {
-          const op = hover?.kind === "rib" ? (hover.i === i ? 0.6 : 0.1) : 0.32;
+          const onPath = !focus || r.l.src === focus || r.l.dst === focus;
+          const op = focus
+            ? onPath
+              ? 0.6
+              : 0.05
+            : hover?.kind === "rib"
+              ? hover.i === i
+                ? 0.6
+                : 0.1
+              : 0.32;
           return (
             <path
               key={i}
@@ -547,7 +606,7 @@ function Sankey() {
           const anchor = left ? "end" : "start";
           const mid = (n.y0 + n.y1) / 2;
           return (
-            <g key={n.id}>
+            <g key={n.id} opacity={focus && !linked.has(n.id) ? 0.35 : 1}>
               <rect
                 x={n.x}
                 y={n.y0}
@@ -555,7 +614,9 @@ function Sankey() {
                 height={h}
                 rx={3}
                 fill={n.c}
-                style={{ cursor: "pointer" }}
+                fillOpacity={focus && !linked.has(n.id) ? 0.25 : 1}
+                style={{ cursor: "pointer", transition: "fill-opacity 120ms" }}
+                onClick={() => setFocus(focus === n.id ? null : n.id)}
                 onMouseEnter={() => {
                   setHover({ kind: "node", id: n.id });
                   setTip({ title: n.label, cust: n.v, avg: perNodeVal[n.id] });
@@ -580,16 +641,6 @@ function Sankey() {
         })}
       </svg>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-        {S_LEGEND.map((l) => (
-          <span key={l.label} className="flex items-center gap-1.5 text-[11px] text-neutral-600">
-            {l.divider && <span className="mr-1 text-neutral-300">|</span>}
-            <span className="size-2.5 rounded-[3px]" style={{ backgroundColor: l.color }} />
-            {l.label}
-          </span>
-        ))}
-      </div>
-
       <div className="mt-2 min-h-[42px] text-xs text-neutral-600">
         {tip ? (
           <>
@@ -607,7 +658,9 @@ function Sankey() {
             </div>
           </>
         ) : (
-          "Hover a flow or node to see customers, total value, and average value."
+          focus
+            ? "Showing flows through the selected node — click it again to clear."
+            : "Hover for customers and value; click a node to follow its flows."
         )}
       </div>
     </div>
