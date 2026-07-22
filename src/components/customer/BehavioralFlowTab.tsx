@@ -337,16 +337,17 @@ function AllPaths() {
 
 const SANKEY_TOTAL = 24318;
 const S_BRACKETS: { id: string; label: string; share: number; color: string; out: Record<string, number> }[] = [
-  { id: "size", label: "Size", share: 0.22, color: "#0729a5", out: { retall: 0.22, keptsome: 0.3, keptall: 0.48 } },
-  { id: "color", label: "Color", share: 0.11, color: "#4169e1", out: { retall: 0.18, keptsome: 0.27, keptall: 0.55 } },
-  { id: "both", label: "Size + Color", share: 0.08, color: "#85a1ff", out: { retall: 0.25, keptsome: 0.45, keptall: 0.3 } },
-  { id: "single", label: "No Bracketing", share: 0.59, color: "#c7d4ff", out: { retall: 0.22, keptsome: 0, keptall: 0.78 } },
+  { id: "size", label: "Size", share: 0.22, color: "#454545", out: { retall: 0.22, keptsome: 0.3, keptall: 0.48 } },
+  { id: "color", label: "Color", share: 0.11, color: "#8a8a8a", out: { retall: 0.18, keptsome: 0.27, keptall: 0.55 } },
+  { id: "both", label: "Size + Color", share: 0.08, color: "#ababab", out: { retall: 0.25, keptsome: 0.45, keptall: 0.3 } },
+  { id: "single", label: "No Bracketing", share: 0.59, color: "#dedede", out: { retall: 0.22, keptsome: 0, keptall: 0.78 } },
 ];
 const S_OUTCOMES = [
-  { id: "retall", label: "Returned All", color: "#0f7a63", repeat: 0.41, val: -14 },
-  { id: "keptsome", label: "Kept Some", color: "#27cba7", repeat: 0.58, val: 104 },
-  { id: "keptall", label: "Kept All", color: "#9ce6d6", repeat: 0.74, val: 188 },
+  { id: "retall", label: "Returned All", color: "#0729a5", repeat: 0.41, val: -14 },
+  { id: "keptsome", label: "Kept Some", color: "#4169e1", repeat: 0.58, val: 104 },
+  { id: "keptall", label: "Kept All", color: "#85a1ff", repeat: 0.74, val: 188 },
 ];
+const S_NEXT = { next: "#0f7a63", norep: "#9ce6d6" };
 const S_DEPTS = [
   { id: "denim", label: "W Denim", share: 0.34, color: "#b45309", val: 150 },
   { id: "tops", label: "W Tops", share: 0.28, color: "#d97706", val: 96 },
@@ -371,25 +372,25 @@ const S_LEGEND_GROUPS = [
   {
     stage: "Bracketing Type",
     items: [
-      { label: "Size", color: "#0729a5" },
-      { label: "Color", color: "#4169e1" },
-      { label: "Size + Color", color: "#85a1ff" },
-      { label: "No Bracketing", color: "#c7d4ff" },
+      { label: "Size", color: "#454545" },
+      { label: "Color", color: "#8a8a8a" },
+      { label: "Size + Color", color: "#ababab" },
+      { label: "No Bracketing", color: "#dedede" },
     ],
   },
   {
     stage: "First Order",
     items: [
-      { label: "Returned All", color: "#0f7a63" },
-      { label: "Kept Some", color: "#27cba7" },
-      { label: "Kept All", color: "#9ce6d6" },
+      { label: "Returned All", color: "#0729a5" },
+      { label: "Kept Some", color: "#4169e1" },
+      { label: "Kept All", color: "#85a1ff" },
     ],
   },
   {
     stage: "Next Purchase?",
     items: [
-      { label: "Next Purchase", color: "#545454" },
-      { label: "No Next Purchase", color: "#b8b8b8" },
+      { label: "Next Purchase", color: S_NEXT.next },
+      { label: "No Next Purchase", color: S_NEXT.norep },
     ],
   },
   {
@@ -409,7 +410,9 @@ function Sankey() {
     null,
   );
   const [tip, setTip] = useState<Tip | null>(null);
-  const [focus, setFocus] = useState<string | null>(null);
+  // Drill-through selection, one entry per stage. Picking a node narrows the
+  // population that flows onward, so every column to its right is recounted.
+  const [sel, setSel] = useState<{ bracket?: string; outcome?: string; next?: string }>({});
 
   const W = 1240;
   const H = 470;
@@ -418,20 +421,40 @@ function Sankey() {
   const top = 50;
   const scale = (H - top - 14 - 5 * 6) / SANKEY_TOTAL;
 
+  // Stage 1 always shows the full population, so every bracket stays clickable
+  // even while another one is selected. Stages 2-4 are sized by what reaches them.
   const bracketN = S_BRACKETS.map((b) => b.share * SANKEY_TOTAL);
+  const bracketOn = (id: string) => !sel.bracket || sel.bracket === id;
+  const outcomeOn = (id: string) => !sel.outcome || sel.outcome === id;
+  const nextOn = (id: string) => !sel.next || sel.next === id;
+
   const outTot = S_OUTCOMES.map((o) =>
-    S_BRACKETS.reduce((s, b, bi) => s + bracketN[bi] * b.out[o.id], 0),
+    S_BRACKETS.reduce((s, b, bi) => (bracketOn(b.id) ? s + bracketN[bi] * b.out[o.id] : s), 0),
   );
-  const repeatN = S_OUTCOMES.reduce((s, o, oi) => s + outTot[oi] * o.repeat, 0);
-  const norepN = SANKEY_TOTAL - repeatN;
-  const avgFirst = S_OUTCOMES.reduce((s, o, oi) => s + outTot[oi] * o.val, 0) / SANKEY_TOTAL;
+  const reachedFirst = outTot.reduce((s, v) => s + v, 0);
+  const repeatN = S_OUTCOMES.reduce(
+    (s, o, oi) => (outcomeOn(o.id) ? s + outTot[oi] * o.repeat : s),
+    0,
+  );
+  const norepN = S_OUTCOMES.reduce(
+    (s, o, oi) => (outcomeOn(o.id) ? s + outTot[oi] * (1 - o.repeat) : s),
+    0,
+  );
+  const deptBase = nextOn("next") ? repeatN : 0;
+  const avgFirst =
+    reachedFirst > 0
+      ? S_OUTCOMES.reduce((s, o, oi) => s + outTot[oi] * o.val, 0) / reachedFirst
+      : 0;
   const avgDept = S_DEPTS.reduce((s, d) => s + d.share * d.val, 0);
 
+  // Nodes keep a 3px floor so a stage that has been filtered down to nothing is
+  // still a click target you can use to back out of the selection.
   const stack = (items: { id: string; label: string; c: string; v: number }[], x: number): SN[] => {
     let y = top;
     return items.map((it) => {
-      const node = { ...it, x, y0: y, y1: y + it.v * scale };
-      y += it.v * scale + 6;
+      const h = Math.max(it.v * scale, 3);
+      const node = { ...it, x, y0: y, y1: y + h };
+      y += h + 6;
       return node;
     });
   };
@@ -445,13 +468,13 @@ function Sankey() {
   );
   const colC = stack(
     [
-      { id: "next", label: "Next Purchase", c: "#545454", v: repeatN },
-      { id: "norep", label: "No Next Purchase", c: "#b8b8b8", v: norepN },
+      { id: "next", label: "Next Purchase", c: S_NEXT.next, v: repeatN },
+      { id: "norep", label: "No Next Purchase", c: S_NEXT.norep, v: norepN },
     ],
     cols[2],
   );
   const colD = stack(
-    S_DEPTS.map((d) => ({ id: d.id, label: d.label, c: d.color, v: repeatN * d.share })),
+    S_DEPTS.map((d) => ({ id: d.id, label: d.label, c: d.color, v: deptBase * d.share })),
     cols[3],
   );
 
@@ -478,18 +501,21 @@ function Sankey() {
   const links: L[] = [];
   S_BRACKETS.forEach((b, bi) =>
     S_OUTCOMES.forEach((o) => {
-      const v = bracketN[bi] * b.out[o.id];
+      const v = bracketOn(b.id) ? bracketN[bi] * b.out[o.id] : 0;
       if (v >= 1) links.push({ src: b.id, dst: o.id, v, color: o.color, avgVal: o.val + o.repeat * avgDept });
     }),
   );
   S_OUTCOMES.forEach((o, oi) => {
-    const tt = outTot[oi];
-    links.push({ src: o.id, dst: "next", v: tt * o.repeat, color: "#545454", avgVal: o.val + avgDept });
-    links.push({ src: o.id, dst: "norep", v: tt * (1 - o.repeat), color: "#b8b8b8", avgVal: o.val });
+    const tt = outcomeOn(o.id) ? outTot[oi] : 0;
+    if (tt * o.repeat >= 1)
+      links.push({ src: o.id, dst: "next", v: tt * o.repeat, color: S_NEXT.next, avgVal: o.val + avgDept });
+    if (tt * (1 - o.repeat) >= 1)
+      links.push({ src: o.id, dst: "norep", v: tt * (1 - o.repeat), color: S_NEXT.norep, avgVal: o.val });
   });
-  S_DEPTS.forEach((d) =>
-    links.push({ src: "next", dst: d.id, v: repeatN * d.share, color: d.color, avgVal: avgFirst + d.val }),
-  );
+  S_DEPTS.forEach((d) => {
+    const v = deptBase * d.share;
+    if (v >= 1) links.push({ src: "next", dst: d.id, v, color: d.color, avgVal: avgFirst + d.val });
+  });
 
   const outOff: Record<string, number> = {};
   const inOff: Record<string, number> = {};
@@ -513,15 +539,51 @@ function Sankey() {
     };
   });
 
-  // Clicking a node focuses it: its own flows stay lit, everything else dims.
-  const linked = new Set<string>();
-  if (focus) {
-    linked.add(focus);
-    links.forEach((l) => {
-      if (l.src === focus) linked.add(l.dst);
-      if (l.dst === focus) linked.add(l.src);
+  // Which stage a node belongs to, so one click handler can drive all four.
+  const stageOf = (id: string): "bracket" | "outcome" | "next" | "dept" => {
+    if (S_BRACKETS.some((b) => b.id === id)) return "bracket";
+    if (S_OUTCOMES.some((o) => o.id === id)) return "outcome";
+    if (id === "next" || id === "norep") return "next";
+    return "dept";
+  };
+  const isOn = (id: string) => {
+    const st = stageOf(id);
+    if (st === "bracket") return bracketOn(id);
+    if (st === "outcome") return outcomeOn(id);
+    if (st === "next") return nextOn(id);
+    return nextOn("next");
+  };
+  const pick = (id: string) => {
+    const st = stageOf(id);
+    if (st === "dept") return;
+    setSel((prev) => {
+      // Re-picking the same node steps back out; picking a new one at a stage
+      // invalidates the narrower stages downstream of it.
+      if (st === "bracket") return prev.bracket === id ? {} : { bracket: id };
+      if (st === "outcome")
+        return prev.outcome === id
+          ? { bracket: prev.bracket }
+          : { bracket: prev.bracket, outcome: id };
+      return prev.next === id
+        ? { bracket: prev.bracket, outcome: prev.outcome }
+        : { bracket: prev.bracket, outcome: prev.outcome, next: id };
     });
-  }
+  };
+
+  const nameOf = (id: string) =>
+    [...S_BRACKETS, ...S_OUTCOMES, ...S_DEPTS].find((n) => n.id === id)?.label ??
+    (id === "next" ? "Next Purchase" : "No Next Purchase");
+  const crumbs = [sel.bracket, sel.outcome, sel.next].filter(Boolean) as string[];
+  // How many customers survive the current path, measured at the last stage picked.
+  const reachedNow = sel.next
+    ? sel.next === "norep"
+      ? norepN
+      : deptBase
+    : sel.outcome
+      ? repeatN + norepN
+      : sel.bracket
+        ? reachedFirst
+        : SANKEY_TOTAL;
 
   const headers = [
     { x: cols[0], label: "Bracketing Type" },
@@ -544,6 +606,37 @@ function Sankey() {
             ))}
           </div>
         ))}
+      </div>
+
+      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-neutral-150 bg-neutral-50 px-3 py-2 text-xs">
+        <span className="font-semibold text-neutral-700">Path</span>
+        <span className="text-neutral-600">All customers</span>
+        {crumbs.map((id) => (
+          <span key={id} className="flex items-center gap-2 text-neutral-600">
+            <span className="text-neutral-400">›</span>
+            <span className="rounded-full bg-neutral-0 px-2 py-0.5 font-medium text-neutral-800 ring-1 ring-neutral-150">
+              {nameOf(id)}
+            </span>
+          </span>
+        ))}
+        <span className="ml-auto flex items-center gap-3">
+          <span className="text-neutral-600">
+            <span className="font-semibold text-neutral-800">{sFmt(reachedNow)}</span> customers ·{" "}
+            <span className="font-semibold text-neutral-800">
+              {((reachedNow / SANKEY_TOTAL) * 100).toFixed(1)}%
+            </span>{" "}
+            of total
+          </span>
+          {crumbs.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSel({})}
+              className="rounded-md border border-neutral-200 bg-neutral-0 px-2 py-1 font-medium text-neutral-700 hover:bg-neutral-100"
+            >
+              Reset
+            </button>
+          )}
+        </span>
       </div>
 
       <svg
@@ -571,16 +664,8 @@ function Sankey() {
           </text>
         ))}
         {ribbons.map((r, i) => {
-          const onPath = !focus || r.l.src === focus || r.l.dst === focus;
-          const op = focus
-            ? onPath
-              ? 0.6
-              : 0.05
-            : hover?.kind === "rib"
-              ? hover.i === i
-                ? 0.6
-                : 0.1
-              : 0.32;
+          const op =
+            hover?.kind === "rib" ? (hover.i === i ? 0.65 : 0.12) : crumbs.length ? 0.5 : 0.32;
           return (
             <path
               key={i}
@@ -606,7 +691,7 @@ function Sankey() {
           const anchor = left ? "end" : "start";
           const mid = (n.y0 + n.y1) / 2;
           return (
-            <g key={n.id} opacity={focus && !linked.has(n.id) ? 0.35 : 1}>
+            <g key={n.id} opacity={isOn(n.id) ? 1 : 0.32}>
               <rect
                 x={n.x}
                 y={n.y0}
@@ -614,9 +699,13 @@ function Sankey() {
                 height={h}
                 rx={3}
                 fill={n.c}
-                fillOpacity={focus && !linked.has(n.id) ? 0.25 : 1}
-                style={{ cursor: "pointer", transition: "fill-opacity 120ms" }}
-                onClick={() => setFocus(focus === n.id ? null : n.id)}
+                stroke={crumbs.includes(n.id) ? "#212121" : "none"}
+                strokeWidth={crumbs.includes(n.id) ? 1.5 : 0}
+                style={{
+                  cursor: stageOf(n.id) === "dept" ? "default" : "pointer",
+                  transition: "y 260ms, height 260ms",
+                }}
+                onClick={() => pick(n.id)}
                 onMouseEnter={() => {
                   setHover({ kind: "node", id: n.id });
                   setTip({ title: n.label, cust: n.v, avg: perNodeVal[n.id] });
@@ -657,10 +746,10 @@ function Sankey() {
               </span>
             </div>
           </>
+        ) : crumbs.length ? (
+          "Every column to the right has been recounted for this path — click a node again to step back out."
         ) : (
-          focus
-            ? "Showing flows through the selected node — click it again to clear."
-            : "Hover for customers and value; click a node to follow its flows."
+          "Hover for customers and value; click a node to drill into its journey."
         )}
       </div>
     </div>
