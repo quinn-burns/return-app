@@ -320,6 +320,7 @@ export default function ExchangeTab() {
         rows={PROMOTE_SIZE_ALL}
       />
       <PromoteTable
+        id="exchange-promote-color"
         title="Promote color exchanges"
         subtitle="Low color-exchange rate — opportunity from increasing (→1.05×)"
         pctLabel="% Ret. Exch. Color"

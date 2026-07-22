@@ -29,15 +29,15 @@ type Tab = (typeof TABS)[number];
 const TAB_META: Record<Tab, { description: string; insight: React.ReactNode }> = {
   Overview: {
     description:
-      "The clearest finding from each area of customer behavior, with the actions they point to — and a way through to the detail behind any of it.",
+      "Everything the other four tabs conclude, totalled and ranked in one place — including the findings that only appear when two areas are read together.",
     insight: (
       <>
-        The single biggest lever right now is{" "}
-        <span className="font-semibold text-neutral-800">size bracketing</span>: 111K orders a year
-        bracket on size and each one loses $7, while colour bracketing earns $44. Fixing size
-        guidance would also feed the two weakest areas below — your{" "}
-        <span className="font-semibold text-neutral-800">4.4% exchange recovery rate</span>{" "}and the
-        836 customers already returning half of what they buy.
+        There is <span className="font-semibold text-neutral-800">$232K</span>{" "}identified across
+        bracketing and exchange, and the largest single piece of it —{" "}
+        <span className="font-semibold text-neutral-800">$111K in colour bracketing</span>{" "}— is also
+        the lever that most improves retention, since 90% of those orders are kept in full and
+        those customers come back at 74%. The mirror of it is size bracketing: 40% of those orders
+        come back in full, and customers who return everything repurchase at just 41%.
       </>
     ),
   },
@@ -477,16 +477,18 @@ function ActionTable({
   pctLabel,
   rows,
   negative = false,
+  id,
 }: {
   title: string;
   subtitle: string;
   pctLabel: string;
   rows: Row[];
   negative?: boolean;
+  id?: string;
 }) {
   const { slice, page, setPage, total, pageSize } = usePaged(rows, 5);
   return (
-    <Card>
+    <Card id={id}>
       <CardHeading title={title} subtitle={subtitle} />
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[640px] text-left text-sm">
@@ -539,12 +541,14 @@ function BracketingTab() {
       </div>
       <BracketingOutcomes />
       <ActionTable
+        id="bracketing-promote-size"
         title="Promote size bracketing"
         subtitle="Profitable size bracketing — prioritized by revenue opportunity (→1.05×)"
         pctLabel="% Orders Brkt. Size"
         rows={PROMOTE_SIZE}
       />
       <ActionTable
+        id="bracketing-promote-color"
         title="Promote color bracketing"
         subtitle="Profitable color bracketing — prioritized by revenue opportunity (→1.05×)"
         pctLabel="% Orders Brkt. Color"
