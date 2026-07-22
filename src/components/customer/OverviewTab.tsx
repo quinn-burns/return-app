@@ -199,64 +199,85 @@ function SeeData({ label = "See the data", onClick }: { label?: string; onClick:
 
 /** Deliberately unlike the flat white KPI grid the other tabs use: this is the
     one place that totals across areas, so it should not look like a tab. */
-function OpportunityBar() {
+function OpportunityBar({ onGo }: { onGo: (tab: string, anchor: string) => void }) {
   const total = RECOVERABLE.reduce((s, r) => s + r.value, 0);
   return (
-    <section className="overflow-hidden rounded-lg bg-primary-800 text-neutral-0">
-      <div className="flex flex-wrap gap-x-10 gap-y-6 p-5">
-        <div className="min-w-[240px] flex-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-primary-300">
-            Recoverable this period
-          </p>
-          <p className="mt-1 text-[40px] font-bold leading-none">{RECOVERABLE_TOTAL}</p>
-          <p className="mt-1.5 text-xs text-primary-200">
-            Identified across bracketing and exchange levers, top departments only
-          </p>
-          <div className="mt-3 flex h-2 overflow-hidden rounded-full bg-primary-600/40">
-            {RECOVERABLE.map((r) => (
-              <span
-                key={r.area}
-                style={{ width: `${(r.value / total) * 100}%`, backgroundColor: r.color }}
-              />
-            ))}
-          </div>
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-            {RECOVERABLE.map((r) => (
-              <span key={r.area} className="flex items-center gap-1.5 text-xs text-primary-100">
-                <span className="size-2 rounded-full" style={{ backgroundColor: r.color }} />
-                {r.area} <span className="font-semibold text-neutral-0">{r.display}</span>
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex min-w-[300px] flex-1 flex-col justify-center gap-3">
-          {TRENDS.map((t) => (
-            <div key={t.label} className="flex items-baseline justify-between gap-3">
-              <span className="text-xs text-primary-200">{t.label}</span>
-              <span className="flex items-baseline gap-2">
-                <span className="text-lg font-bold">{t.value}</span>
+    <div className="flex flex-col gap-3">
+      <section className="overflow-hidden rounded-lg bg-primary-800 text-neutral-0">
+        <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-stretch lg:gap-8">
+          {/* Gain. The actionable number, so it gets the size. */}
+          <div className="flex-1">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary-200">
+              <span className="size-2 rounded-full bg-brand-teal" />
+              Money to gain
+            </p>
+            <p className="mt-1.5 text-[44px] font-bold leading-none">{RECOVERABLE_TOTAL}</p>
+            <p className="mt-2 max-w-[420px] text-sm text-primary-100">
+              Recoverable if you act on what Bracketing and Exchange already recommend.
+            </p>
+            <div className="mt-3.5 flex h-2 max-w-[420px] overflow-hidden rounded-full">
+              {RECOVERABLE.map((r) => (
                 <span
-                  className={`text-xs font-medium ${t.good ? "text-success-100" : "text-warning-100"}`}
-                >
-                  {t.note}
-                </span>
-              </span>
+                  key={r.area}
+                  style={{ width: `${(r.value / total) * 100}%`, backgroundColor: r.color }}
+                />
+              ))}
             </div>
-          ))}
-        </div>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+              {RECOVERABLE.map((r) => (
+                <span key={r.area} className="flex items-center gap-1.5 text-xs text-primary-100">
+                  <span className="size-2 rounded-full" style={{ backgroundColor: r.color }} />
+                  {r.area} <span className="font-semibold text-neutral-0">{r.display}</span>
+                </span>
+              ))}
+            </div>
+            <p className="mt-2.5 text-[11px] text-primary-300">
+              Totalled from the opportunity column of each action table, top departments.
+            </p>
+          </div>
 
-        <div className="flex min-w-[190px] flex-col justify-center rounded-lg bg-primary-600/30 px-4 py-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-primary-200">
-            Largest group at risk
-          </p>
-          <p className="mt-1 text-2xl font-bold leading-tight">$4.3M</p>
-          <p className="text-xs text-primary-100">
-            1,574 new customers who returned and never came back
-          </p>
+          <div className="hidden w-px shrink-0 bg-primary-600 lg:block" />
+
+          {/* Protect. A different kind of money, so it is set apart and sized down
+              rather than competing with the headline. */}
+          <div className="flex flex-col justify-center rounded-lg bg-primary-600/25 p-4 lg:w-[320px]">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary-200">
+              <span className="size-2 rounded-full bg-warning-400" />
+              Money to protect
+            </p>
+            <p className="mt-1.5 text-[28px] font-bold leading-none">$4.3M</p>
+            <p className="mt-2 text-xs leading-relaxed text-primary-100">
+              Revenue you already hold, sitting in your most fragile group — 1,574 new customers
+              who returned once and never came back.
+            </p>
+            <button
+              type="button"
+              onClick={() => onGo("Segments", "segments-impact")}
+              className="mt-2.5 inline-flex items-center gap-1 self-start text-xs font-medium text-neutral-0 underline underline-offset-2 transition-opacity hover:opacity-80"
+            >
+              See all at-risk segments
+              <ArrowRight />
+            </button>
+          </div>
         </div>
+      </section>
+
+      {/* Context, not headline — so it sits outside the panel. */}
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-2 rounded-lg border border-neutral-200 bg-neutral-0 px-4 py-2.5">
+        <span className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
+          How you are tracking
+        </span>
+        {TRENDS.map((t) => (
+          <span key={t.label} className="flex items-baseline gap-2 text-xs">
+            <span className="text-neutral-600">{t.label}</span>
+            <span className="text-sm font-bold text-neutral-800">{t.value}</span>
+            <span className={`font-medium ${t.good ? "text-success-600" : "text-warning-600"}`}>
+              {t.note}
+            </span>
+          </span>
+        ))}
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -448,7 +469,7 @@ function SuggestedActions({ onGo }: { onGo: (tab: string, anchor: string) => voi
 export default function OverviewTab({ onGo }: { onGo: (tab: string, anchor?: string) => void }) {
   return (
     <>
-      <OpportunityBar />
+      <OpportunityBar onGo={onGo} />
       <Connections onGo={onGo} />
       <LeverTable onGo={onGo} />
       <div className="grid grid-cols-1 gap-5">
