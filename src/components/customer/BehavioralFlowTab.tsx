@@ -412,19 +412,33 @@ function Sankey() {
   const [tip, setTip] = useState<Tip | null>(null);
   // Drill-through selection, one entry per stage. Picking a node narrows the
   // population that flows onward, so every column to its right is recounted.
-  const [sel, setSel] = useState<{ bracket?: string; outcome?: string; next?: string }>({});
+  const [sel, setSel] = useState<{
+    bracket?: string;
+    outcome?: string;
+    next?: string;
+    dept?: string;
+  }>({});
 
   const W = 1240;
   const H = 470;
   const colW = 20;
   const cols = [60, 430, 800, 1160];
+  // Pointer bands per column, wide enough to catch the bar, its label and the
+  // empty side of the column, without running into the neighbouring column.
+  const hitBands = [
+    [0, 250],
+    [380, 615],
+    [645, 850],
+    [1005, 1240],
+  ];
   const top = 50;
   const scale = (H - top - 14 - 5 * 6) / SANKEY_TOTAL;
 
   const bracketOn = (id: string) => !sel.bracket || sel.bracket === id;
   const outcomeOn = (id: string) => !sel.outcome || sel.outcome === id;
   const nextOn = (id: string) => !sel.next || sel.next === id;
-  const active = Boolean(sel.bracket || sel.outcome || sel.next);
+  const deptOn = (id: string) => !sel.dept || sel.dept === id;
+  const active = Boolean(sel.bracket || sel.outcome || sel.next || sel.dept);
 
   // Geometry is always built from the full population, so drilling in never
   // resizes or reflows the diagram — the shape you learned stays put.
@@ -471,7 +485,7 @@ function Sankey() {
     if (st === "bracket") return Boolean(sel.bracket) && sel.bracket !== id;
     if (st === "outcome") return Boolean(sel.outcome) && sel.outcome !== id;
     if (st === "next") return Boolean(sel.next) && sel.next !== id;
-    return false;
+    return Boolean(sel.dept) && sel.dept !== id;
   };
 
   const stack = (items: { id: string; label: string; c: string; v: number }[], x: number): SN[] => {
@@ -545,7 +559,7 @@ function Sankey() {
     const st = stageOf(l.src);
     if (st === "bracket") return bracketOn(l.src) && outcomeOn(l.dst);
     if (st === "outcome") return outcomeOn(l.src) && nextOn(l.dst);
-    return nextOn("next");
+    return nextOn("next") && deptOn(l.dst);
   };
 
   const outOff: Record<string, number> = {};
@@ -579,7 +593,6 @@ function Sankey() {
   };
   const pick = (id: string) => {
     const st = stageOf(id);
-    if (st === "dept") return;
     setSel((prev) => {
       // Re-picking the same node steps back out; picking a new one at a stage
       // invalidates the narrower stages downstream of it.
@@ -588,9 +601,14 @@ function Sankey() {
         return prev.outcome === id
           ? { bracket: prev.bracket }
           : { bracket: prev.bracket, outcome: id };
-      return prev.next === id
-        ? { bracket: prev.bracket, outcome: prev.outcome }
-        : { bracket: prev.bracket, outcome: prev.outcome, next: id };
+      if (st === "next")
+        return prev.next === id
+          ? { bracket: prev.bracket, outcome: prev.outcome }
+          : { bracket: prev.bracket, outcome: prev.outcome, next: id };
+      // Landing in a department implies they came back, so imply that pick too.
+      return prev.dept === id
+        ? { bracket: prev.bracket, outcome: prev.outcome, next: prev.next }
+        : { bracket: prev.bracket, outcome: prev.outcome, next: "next", dept: id };
     });
   };
 
@@ -600,13 +618,13 @@ function Sankey() {
     const st = stageOf(src);
     if (st === "bracket") setSel({ bracket: src, outcome: dst });
     else if (st === "outcome") setSel((p) => ({ bracket: p.bracket, outcome: src, next: dst }));
-    else setSel((p) => ({ bracket: p.bracket, outcome: p.outcome, next: "next" }));
+    else setSel((p) => ({ bracket: p.bracket, outcome: p.outcome, next: "next", dept: dst }));
   };
 
   const nameOf = (id: string) =>
     [...S_BRACKETS, ...S_OUTCOMES, ...S_DEPTS].find((n) => n.id === id)?.label ??
     (id === "next" ? "Next Purchase" : "No Next Purchase");
-  const crumbs = [sel.bracket, sel.outcome, sel.next].filter(Boolean) as string[];
+  const crumbs = [sel.bracket, sel.outcome, sel.next, sel.dept].filter(Boolean) as string[];
   // How many customers survive the path, counted at the last stage picked.
   const reachedNow = crumbs.length ? nodeCount[crumbs[crumbs.length - 1]] : SANKEY_TOTAL;
 
@@ -723,6 +741,7 @@ function Sankey() {
           const tx = left ? n.x - 6 : n.x + colW + 6;
           const anchor = left ? "end" : "start";
           const mid = (n.y0 + n.y1) / 2;
+          const band = hitBands[cols.indexOf(n.x)] ?? [n.x - 8, n.x + colW + 8];
           return (
             <g key={n.id} opacity={dimmed(n.id) ? 0.45 : 1} style={{ transition: "opacity 160ms" }}>
               <rect
@@ -752,15 +771,15 @@ function Sankey() {
                   {n.label} · {sFmt(nodeCount[n.id])}
                 </text>
               )}
-              {/* Transparent target covering the bar and its label. The bar alone
-                  is ~11 real pixels wide, far too thin to aim at. */}
+              {/* Transparent target spanning the column's whole band. The bar
+                  alone is ~11 real pixels wide, far too thin to aim at. */}
               <rect
-                x={left ? n.x - 150 : n.x - 8}
+                x={band[0]}
                 y={Math.min(n.y0, mid - 11)}
-                width={150 + colW + 8}
+                width={band[1] - band[0]}
                 height={Math.max(h, 22)}
                 fill="transparent"
-                style={{ cursor: stageOf(n.id) === "dept" ? "default" : "pointer" }}
+                style={{ cursor: "pointer" }}
                 onClick={() => pick(n.id)}
                 onMouseEnter={() => {
                   setHover({ kind: "node", id: n.id });
