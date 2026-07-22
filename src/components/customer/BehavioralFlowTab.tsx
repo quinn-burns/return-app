@@ -532,22 +532,54 @@ function Sankey() {
     perNodeVal[d.id] = avgFirst + d.val;
   });
 
-  type L = { src: string; dst: string; v: number; color: string; avgVal: number };
+  // v sizes the ribbon and never changes; uv is the count that actually reaches
+  // it along the saved path, so a flow can never report more customers than the
+  // node feeding it.
+  type L = { src: string; dst: string; v: number; uv: number; color: string; avgVal: number };
   const links: L[] = [];
   S_BRACKETS.forEach((b, bi) =>
     S_OUTCOMES.forEach((o) => {
       const v = bracketN[bi] * b.out[o.id];
       if (v >= 1)
-        links.push({ src: b.id, dst: o.id, v, color: o.color, avgVal: o.val + o.repeat * avgDept });
+        links.push({
+          src: b.id,
+          dst: o.id,
+          v,
+          uv: bracketOn(b.id) ? v : 0,
+          color: o.color,
+          avgVal: o.val + o.repeat * avgDept,
+        });
     }),
   );
   S_OUTCOMES.forEach((o, oi) => {
     const tt = outTot[oi];
-    links.push({ src: o.id, dst: "next", v: tt * o.repeat, color: S_NEXT.next, avgVal: o.val + avgDept });
-    links.push({ src: o.id, dst: "norep", v: tt * (1 - o.repeat), color: S_NEXT.norep, avgVal: o.val });
+    const reaching = outcomeOn(o.id) ? outUp[oi] : 0;
+    links.push({
+      src: o.id,
+      dst: "next",
+      v: tt * o.repeat,
+      uv: reaching * o.repeat,
+      color: S_NEXT.next,
+      avgVal: o.val + avgDept,
+    });
+    links.push({
+      src: o.id,
+      dst: "norep",
+      v: tt * (1 - o.repeat),
+      uv: reaching * (1 - o.repeat),
+      color: S_NEXT.norep,
+      avgVal: o.val,
+    });
   });
   S_DEPTS.forEach((d) =>
-    links.push({ src: "next", dst: d.id, v: repeatN * d.share, color: d.color, avgVal: avgFirst + d.val }),
+    links.push({
+      src: "next",
+      dst: d.id,
+      v: repeatN * d.share,
+      uv: deptUp * d.share,
+      color: d.color,
+      avgVal: avgFirst + d.val,
+    }),
   );
 
   // A flow is on the saved route when both ends survive the picks so far.
@@ -631,7 +663,7 @@ function Sankey() {
     const l = ribbons[hover.i].l;
     tip = {
       title: `${nodeMap[l.src].label} → ${nodeMap[l.dst].label}`,
-      cust: l.v,
+      cust: active ? l.uv : l.v,
       avg: l.avgVal,
     };
   } else if (hover?.kind === "node") {
@@ -715,15 +747,21 @@ function Sankey() {
           </text>
         ))}
         {ribbons.map((r, i) => {
-          const op =
-            hover?.kind === "rib"
-              ? hover.i === i
-                ? 0.6
-                : 0.1
-              : active
-                ? onRoute(r.l)
-                  ? 0.45
-                  : 0.07
+          // Selection is the outer decision and hover only modulates within it,
+          // so pointing at a flow lifts it without erasing the path you saved.
+          const lit = hover?.kind === "rib" && hover.i === i;
+          const op = active
+            ? onRoute(r.l)
+              ? lit
+                ? 0.66
+                : 0.42
+              : lit
+                ? 0.2
+                : 0.06
+            : lit
+              ? 0.6
+              : hover?.kind === "rib"
+                ? 0.1
                 : 0.32;
           return (
             <path
