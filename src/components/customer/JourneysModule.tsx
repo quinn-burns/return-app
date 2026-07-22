@@ -30,6 +30,16 @@ export type Journey = {
   cameBack: boolean;
 };
 
+/* Movement is demo data, but it has to behave like real movement: most journeys
+   sit roughly flat and a handful genuinely move. A flat spread made half the
+   page "material", which makes the alert worth nothing. */
+function movement(key: string) {
+  const spike = seeded(key, 137, 0, 1);
+  if (spike <= 0.88) return seeded(key, 91, -9, 9);
+  const dir = seeded(key, 307, 0, 1) > 0.5 ? 1 : -1;
+  return dir * seeded(key, 211, 21, 41);
+}
+
 export function buildJourneys(m: JourneyInput): Journey[] {
   const out: Journey[] = [];
   m.brackets.forEach((b) => {
@@ -57,7 +67,7 @@ export function buildJourneys(m: JourneyInput): Journey[] {
             customers,
             perCust,
             net: customers * perCust,
-            delta: seeded(key, 91, -34, 38),
+            delta: movement(key),
             cameBack: true,
           });
         });
@@ -74,7 +84,7 @@ export function buildJourneys(m: JourneyInput): Journey[] {
           customers: gone,
           perCust: o.val,
           net: gone * o.val,
-          delta: seeded(key, 91, -34, 38),
+          delta: movement(key),
           cameBack: false,
         });
       }
