@@ -212,8 +212,18 @@ function OpportunityBar({ onGo }: { onGo: (tab: string, anchor: string) => void 
               Money to gain
             </p>
             <p className="mt-1.5 text-[44px] font-bold leading-none">{RECOVERABLE_TOTAL}</p>
-            <p className="mt-2 max-w-[420px] text-sm text-primary-100">
-              Recoverable if you act on what Bracketing and Exchange already recommend.
+            <p className="mt-2 max-w-[470px] text-sm leading-relaxed text-primary-100">
+              Three moves cover <span className="font-semibold text-neutral-0">$202K</span> of it:
+              promote{" "}
+              <span className="font-semibold text-neutral-0">
+                colour bracketing in Running and Casual
+              </span>
+              ,{" "}
+              <span className="font-semibold text-neutral-0">
+                size bracketing in Steel and Soft Toe
+              </span>
+              , and{" "}
+              <span className="font-semibold text-neutral-0">size exchanges in Light Hike</span>.
             </p>
             <div className="mt-3.5 flex h-2 max-w-[420px] overflow-hidden rounded-full">
               {RECOVERABLE.map((r) => (
