@@ -421,34 +421,46 @@ function Sankey() {
   const top = 50;
   const scale = (H - top - 14 - 5 * 6) / SANKEY_TOTAL;
 
-  // Stage 1 always shows the full population, so every bracket stays clickable
-  // even while another one is selected. Stages 2-4 are sized by what reaches them.
-  const bracketN = S_BRACKETS.map((b) => b.share * SANKEY_TOTAL);
   const bracketOn = (id: string) => !sel.bracket || sel.bracket === id;
   const outcomeOn = (id: string) => !sel.outcome || sel.outcome === id;
   const nextOn = (id: string) => !sel.next || sel.next === id;
+  const active = Boolean(sel.bracket || sel.outcome || sel.next);
 
+  // Geometry is always built from the full population, so drilling in never
+  // resizes or reflows the diagram — the shape you learned stays put.
+  const bracketN = S_BRACKETS.map((b) => b.share * SANKEY_TOTAL);
   const outTot = S_OUTCOMES.map((o) =>
-    S_BRACKETS.reduce((s, b, bi) => (bracketOn(b.id) ? s + bracketN[bi] * b.out[o.id] : s), 0),
+    S_BRACKETS.reduce((s, b, bi) => s + bracketN[bi] * b.out[o.id], 0),
   );
-  const reachedFirst = outTot.reduce((s, v) => s + v, 0);
-  const repeatN = S_OUTCOMES.reduce(
-    (s, o, oi) => (outcomeOn(o.id) ? s + outTot[oi] * o.repeat : s),
-    0,
-  );
-  const norepN = S_OUTCOMES.reduce(
-    (s, o, oi) => (outcomeOn(o.id) ? s + outTot[oi] * (1 - o.repeat) : s),
-    0,
-  );
-  const deptBase = nextOn("next") ? repeatN : 0;
-  const avgFirst =
-    reachedFirst > 0
-      ? S_OUTCOMES.reduce((s, o, oi) => s + outTot[oi] * o.val, 0) / reachedFirst
-      : 0;
+  const repeatN = S_OUTCOMES.reduce((s, o, oi) => s + outTot[oi] * o.repeat, 0);
+  const norepN = SANKEY_TOTAL - repeatN;
+  const avgFirst = S_OUTCOMES.reduce((s, o, oi) => s + outTot[oi] * o.val, 0) / SANKEY_TOTAL;
   const avgDept = S_DEPTS.reduce((s, d) => s + d.share * d.val, 0);
 
-  // Nodes keep a 3px floor so a stage that has been filtered down to nothing is
-  // still a click target you can use to back out of the selection.
+  // The selected route, counted stage by stage. Drawn as a solid band inside
+  // each full-size flow, so the part and the whole are visible together.
+  const selBracket = S_BRACKETS.map((b, i) => (bracketOn(b.id) ? bracketN[i] : 0));
+  const selOut = S_OUTCOMES.map((o) =>
+    outcomeOn(o.id) ? S_BRACKETS.reduce((s, b, bi) => s + selBracket[bi] * b.out[o.id], 0) : 0,
+  );
+  const selNext = nextOn("next")
+    ? S_OUTCOMES.reduce((s, o, oi) => s + selOut[oi] * o.repeat, 0)
+    : 0;
+  const selNorep = nextOn("norep")
+    ? S_OUTCOMES.reduce((s, o, oi) => s + selOut[oi] * (1 - o.repeat), 0)
+    : 0;
+
+  const selVal: Record<string, number> = { next: selNext, norep: selNorep };
+  S_BRACKETS.forEach((b, i) => {
+    selVal[b.id] = selBracket[i];
+  });
+  S_OUTCOMES.forEach((o, i) => {
+    selVal[o.id] = selOut[i];
+  });
+  S_DEPTS.forEach((d) => {
+    selVal[d.id] = selNext * d.share;
+  });
+
   const stack = (items: { id: string; label: string; c: string; v: number }[], x: number): SN[] => {
     let y = top;
     return items.map((it) => {
@@ -474,7 +486,7 @@ function Sankey() {
     cols[2],
   );
   const colD = stack(
-    S_DEPTS.map((d) => ({ id: d.id, label: d.label, c: d.color, v: deptBase * d.share })),
+    S_DEPTS.map((d) => ({ id: d.id, label: d.label, c: d.color, v: repeatN * d.share })),
     cols[3],
   );
 
@@ -497,25 +509,45 @@ function Sankey() {
     perNodeVal[d.id] = avgFirst + d.val;
   });
 
-  type L = { src: string; dst: string; v: number; color: string; avgVal: number };
+  type L = { src: string; dst: string; v: number; sv: number; color: string; avgVal: number };
   const links: L[] = [];
   S_BRACKETS.forEach((b, bi) =>
     S_OUTCOMES.forEach((o) => {
-      const v = bracketOn(b.id) ? bracketN[bi] * b.out[o.id] : 0;
-      if (v >= 1) links.push({ src: b.id, dst: o.id, v, color: o.color, avgVal: o.val + o.repeat * avgDept });
+      const v = bracketN[bi] * b.out[o.id];
+      if (v < 1) return;
+      const sv = bracketOn(b.id) && outcomeOn(o.id) ? v : 0;
+      links.push({ src: b.id, dst: o.id, v, sv, color: o.color, avgVal: o.val + o.repeat * avgDept });
     }),
   );
   S_OUTCOMES.forEach((o, oi) => {
-    const tt = outcomeOn(o.id) ? outTot[oi] : 0;
-    if (tt * o.repeat >= 1)
-      links.push({ src: o.id, dst: "next", v: tt * o.repeat, color: S_NEXT.next, avgVal: o.val + avgDept });
-    if (tt * (1 - o.repeat) >= 1)
-      links.push({ src: o.id, dst: "norep", v: tt * (1 - o.repeat), color: S_NEXT.norep, avgVal: o.val });
+    const tt = outTot[oi];
+    links.push({
+      src: o.id,
+      dst: "next",
+      v: tt * o.repeat,
+      sv: nextOn("next") ? selOut[oi] * o.repeat : 0,
+      color: S_NEXT.next,
+      avgVal: o.val + avgDept,
+    });
+    links.push({
+      src: o.id,
+      dst: "norep",
+      v: tt * (1 - o.repeat),
+      sv: nextOn("norep") ? selOut[oi] * (1 - o.repeat) : 0,
+      color: S_NEXT.norep,
+      avgVal: o.val,
+    });
   });
-  S_DEPTS.forEach((d) => {
-    const v = deptBase * d.share;
-    if (v >= 1) links.push({ src: "next", dst: d.id, v, color: d.color, avgVal: avgFirst + d.val });
-  });
+  S_DEPTS.forEach((d) =>
+    links.push({
+      src: "next",
+      dst: d.id,
+      v: repeatN * d.share,
+      sv: selNext * d.share,
+      color: d.color,
+      avgVal: avgFirst + d.val,
+    }),
+  );
 
   const outOff: Record<string, number> = {};
   const inOff: Record<string, number> = {};
@@ -533,8 +565,13 @@ function Sankey() {
     const x1 = s.x + colW;
     const x2 = dn.x;
     const mx = (x1 + x2) / 2;
+    const band = (a0: number, a1: number, b0: number, b1: number) =>
+      `M${x1},${a0} C${mx},${a0} ${mx},${b0} ${x2},${b0} L${x2},${b1} C${mx},${b1} ${mx},${a1} ${x1},${a1} Z`;
+    // The selected share of a flow, drawn along its top edge.
+    const f = l.v > 0 ? l.sv / l.v : 0;
     return {
-      path: `M${x1},${sy0} C${mx},${sy0} ${mx},${dy0} ${x2},${dy0} L${x2},${dy1} C${mx},${dy1} ${mx},${sy1} ${x1},${sy1} Z`,
+      path: band(sy0, sy1, dy0, dy1),
+      hi: f > 0.001 ? band(sy0, sy0 + (sy1 - sy0) * f, dy0, dy0 + (dy1 - dy0) * f) : null,
       l,
     };
   });
@@ -545,13 +582,6 @@ function Sankey() {
     if (S_OUTCOMES.some((o) => o.id === id)) return "outcome";
     if (id === "next" || id === "norep") return "next";
     return "dept";
-  };
-  const isOn = (id: string) => {
-    const st = stageOf(id);
-    if (st === "bracket") return bracketOn(id);
-    if (st === "outcome") return outcomeOn(id);
-    if (st === "next") return nextOn(id);
-    return nextOn("next");
   };
   const pick = (id: string) => {
     const st = stageOf(id);
@@ -586,12 +616,12 @@ function Sankey() {
   // How many customers survive the current path, measured at the last stage picked.
   const reachedNow = sel.next
     ? sel.next === "norep"
-      ? norepN
-      : deptBase
+      ? selNorep
+      : selNext
     : sel.outcome
-      ? repeatN + norepN
+      ? selOut.reduce((s, v) => s + v, 0)
       : sel.bracket
-        ? reachedFirst
+        ? selBracket.reduce((s, v) => s + v, 0)
         : SANKEY_TOTAL;
 
   const headers = [
@@ -673,8 +703,15 @@ function Sankey() {
           </text>
         ))}
         {ribbons.map((r, i) => {
-          const op =
-            hover?.kind === "rib" ? (hover.i === i ? 0.65 : 0.12) : crumbs.length ? 0.5 : 0.32;
+          // With a route picked the untouched flows stay drawn, just quiet, so
+          // the diagram keeps its shape and the route reads on top of it.
+          const op = active
+            ? 0.12
+            : hover?.kind === "rib"
+              ? hover.i === i
+                ? 0.65
+                : 0.12
+              : 0.32;
           return (
             <path
               key={i}
@@ -687,13 +724,19 @@ function Sankey() {
                 setHover({ kind: "rib", i });
                 setTip({
                   title: `${nodeMap[r.l.src].label} → ${nodeMap[r.l.dst].label}`,
-                  cust: r.l.v,
+                  cust: active ? r.l.sv : r.l.v,
                   avg: r.l.avgVal,
                 });
               }}
             />
           );
         })}
+        {active &&
+          ribbons.map((r, i) =>
+            r.hi ? (
+              <path key={`hi${i}`} d={r.hi} fill={r.l.color} fillOpacity={0.85} pointerEvents="none" />
+            ) : null,
+          )}
         {Object.values(nodeMap).map((n) => {
           const h = Math.max(2, n.y1 - n.y0);
           const left = n.x > W / 2;
@@ -701,7 +744,7 @@ function Sankey() {
           const anchor = left ? "end" : "start";
           const mid = (n.y0 + n.y1) / 2;
           return (
-            <g key={n.id} opacity={isOn(n.id) ? 1 : 0.32}>
+            <g key={n.id}>
               <rect
                 x={n.x}
                 y={n.y0}
@@ -709,23 +752,36 @@ function Sankey() {
                 height={h}
                 rx={3}
                 fill={n.c}
+                fillOpacity={active ? 0.2 : 1}
                 stroke={crumbs.includes(n.id) ? "#212121" : "none"}
                 strokeWidth={crumbs.includes(n.id) ? 1.5 : 0}
                 pointerEvents="none"
-                style={{ transition: "y 260ms, height 260ms" }}
+                style={{ transition: "fill-opacity 160ms" }}
               />
+              {active && selVal[n.id] > 0 ? (
+                <rect
+                  x={n.x}
+                  y={n.y0}
+                  width={colW}
+                  height={Math.max(h * (selVal[n.id] / n.v), 2)}
+                  rx={3}
+                  fill={n.c}
+                  pointerEvents="none"
+                  style={{ transition: "height 220ms" }}
+                />
+              ) : null}
               {h > 22 ? (
                 <>
                   <text x={tx} y={mid - 2} textAnchor={anchor} fontSize="11" fontWeight="600" fill="#212121" pointerEvents="none">
                     {n.label}
                   </text>
                   <text x={tx} y={mid + 11} textAnchor={anchor} fontSize="10.5" fill="#676767" pointerEvents="none">
-                    {sFmt(n.v)}
+                    {active ? `${sFmt(selVal[n.id])} of ${sFmt(n.v)}` : sFmt(n.v)}
                   </text>
                 </>
               ) : (
                 <text x={tx} y={mid + 3.5} textAnchor={anchor} fontSize="10.5" fontWeight="600" fill="#212121" pointerEvents="none">
-                  {n.label} · {sFmt(n.v)}
+                  {n.label} · {active ? `${sFmt(selVal[n.id])} of ${sFmt(n.v)}` : sFmt(n.v)}
                 </text>
               )}
               {/* Transparent target covering the bar and its label. The bar alone
@@ -740,7 +796,7 @@ function Sankey() {
                 onClick={() => pick(n.id)}
                 onMouseEnter={() => {
                   setHover({ kind: "node", id: n.id });
-                  setTip({ title: n.label, cust: n.v, avg: perNodeVal[n.id] });
+                  setTip({ title: n.label, cust: active ? selVal[n.id] : n.v, avg: perNodeVal[n.id] });
                 }}
               />
             </g>
