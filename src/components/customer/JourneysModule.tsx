@@ -93,6 +93,72 @@ export function buildJourneys(m: JourneyInput): Journey[] {
   return out;
 }
 
+/* --------------------------- the read ---------------------------- */
+
+/* A path plus two numbers is not an insight — someone still has to work out
+   what it means and what to do. Derive both from the shape of the journey so
+   every row says it outright. */
+export type Read = { verdict: string; tone: "bad" | "warn" | "good"; meaning: string; action: string };
+
+export function readJourney(j: Journey): Read {
+  const bracket = j.steps[0].id;
+  const outcome = j.steps[1].id;
+  const dept = j.cameBack ? j.steps[3].label : null;
+  const growing = j.delta >= 5;
+  const shrinking = j.delta <= -5;
+  const grew = (bad: boolean) =>
+    bad && growing
+      ? " And it is growing."
+      : !bad && shrinking
+        ? " And it is shrinking."
+        : "";
+
+  if (outcome === "retall" && !j.cameBack) {
+    return {
+      verdict: "Costing you",
+      tone: "bad",
+      meaning: "You paid to acquire them, they sent the whole order back, and never returned." + grew(true),
+      action:
+        bracket === "single"
+          ? "Fix the product detail that oversold it"
+          : "Add size guidance before checkout",
+    };
+  }
+  if (outcome === "retall" && j.cameBack) {
+    return {
+      verdict: "Recovered",
+      tone: "warn",
+      meaning: "Returned everything first time but came back anyway — something won them back." + grew(false),
+      action: "Find what recovered them and repeat it",
+    };
+  }
+  if (!j.cameBack) {
+    return {
+      verdict: "One and done",
+      tone: "warn",
+      meaning: "They kept what they bought and then never came back — revenue now, nothing after." + grew(true),
+      action: "Trigger a win-back at 30 days",
+    };
+  }
+  if (outcome === "keptall") {
+    return {
+      verdict: "Winning",
+      tone: "good",
+      meaning: `Kept the whole order and came back${dept ? ` into ${dept}` : ""} — the pattern worth protecting.` + grew(false),
+      action:
+        bracket === "color"
+          ? "Push colour bracketing to more of these customers"
+          : "Build a look-alike audience from this group",
+    };
+  }
+  return {
+    verdict: "Solid",
+    tone: "good",
+    meaning: `Kept part of the order and came back${dept ? ` into ${dept}` : ""}.` + grew(false),
+    action: "Move the partial return into an exchange",
+  };
+}
+
 const fmtN = (n: number) => Math.round(n).toLocaleString();
 function fmtMoney(v: number) {
   const a = Math.abs(v);
@@ -246,7 +312,10 @@ export default function JourneysModule({
     return sorted;
   }, [journeys, preset, metric, sort]);
 
-  const { slice, page, setPage, total, pageSize } = usePaged(rows, 8);
+  const { slice, page, setPage, total, pageSize } = usePaged(rows, 6);
+  // Say the most important thing outright rather than leaving it in row one.
+  const lead = rows[0];
+  const leadRead = lead ? readJourney(lead) : null;
   const max = Math.max(...rows.map((j) => Math.abs(metric === "net" ? j.net : j.customers)), 1);
   const activeHint = PRESETS.find((p) => p.id === preset)?.hint ?? "";
 
@@ -389,16 +458,31 @@ export default function JourneysModule({
         </div>
       </div>
 
+      {lead && leadRead ? (
+        <div className="mt-3 rounded-lg border border-primary-100 bg-primary-50 p-3.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary-600">
+            Start here
+          </p>
+          <p className="mt-1 text-sm leading-relaxed text-neutral-800">
+            <span className="font-semibold">{fmtN(lead.customers)} customers</span>{" "}
+            {lead.steps.map((st) => st.label.toLowerCase()).join(" → ")}, worth{" "}
+            <span className="font-semibold">{fmtMoney(lead.net)}</span>. {leadRead.meaning}
+          </p>
+          <p className="mt-1.5 text-sm font-medium text-neutral-800">
+            → {leadRead.action}
+          </p>
+        </div>
+      ) : null}
+
       <ol className="mt-3 flex flex-col">
         {slice.map((j, i) => {
           const size = metric === "net" ? j.net : j.customers;
           const pct = (Math.abs(size) / max) * 100;
           const negative = metric === "net" && j.net < 0;
+          const read = readJourney(j);
           return (
-            <li
-              key={j.key}
-              className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-primary-50 py-3 last:border-b-0"
-            >
+            <li key={j.key} className="border-b border-primary-50 py-3 last:border-b-0">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <span className="w-5 shrink-0 text-xs font-semibold text-neutral-400">
                 {page * pageSize + i + 1}
               </span>
@@ -430,7 +514,26 @@ export default function JourneysModule({
                 ) : null}
                 <Delta value={j.delta} />
               </span>
-              <TakeAction context="Behavioral Flow" department={j.steps[0].label} />
+              </div>
+              {/* What it means and what to do, said outright. */}
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 pl-0 sm:pl-9">
+                <span
+                  className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] font-semibold ${
+                    read.tone === "bad"
+                      ? "bg-danger-50 text-danger-600"
+                      : read.tone === "warn"
+                        ? "bg-warning-50 text-warning-600"
+                        : "bg-success-50 text-success-600"
+                  }`}
+                >
+                  {read.verdict}
+                </span>
+                <p className="min-w-[220px] flex-1 text-xs leading-relaxed text-neutral-600">
+                  {read.meaning}
+                </p>
+                <span className="text-xs font-medium text-neutral-800">→ {read.action}</span>
+                <TakeAction context="Behavioral Flow" department={j.steps[0].label} />
+              </div>
             </li>
           );
         })}
