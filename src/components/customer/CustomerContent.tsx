@@ -579,25 +579,48 @@ export default function CustomerContent() {
   const pendingAnchor = useRef<string | null>(null);
   const pendingScroll = useRef<number | null>(null);
   const overviewScroll = useRef(0);
+  // Where a drill started, in a ref so the popstate listener always sees it.
+  const drilledFrom = useRef<Tab | null>(null);
   const [returnFrom, setReturnFrom] = useState<Tab | null>(null);
 
   const go = (next: string, anchor?: string) => {
     // Remember exactly where they were reading before we send them off.
     overviewScroll.current = window.scrollY;
+    drilledFrom.current = tab;
     setReturnFrom(tab);
     pendingAnchor.current = anchor ?? null;
+    // A history entry so the browser Back button undoes the drill like anything
+    // else. The pill routes through the same entry via history.back().
+    window.history.pushState({ customerDrill: true }, "");
     setTab(next as Tab);
   };
 
-  const backToOverview = () => {
-    if (!returnFrom) return;
+  const restore = () => {
+    const from = drilledFrom.current;
+    if (!from) return;
+    drilledFrom.current = null;
     pendingScroll.current = overviewScroll.current;
     setReturnFrom(null);
-    setTab(returnFrom);
+    setTab(from);
   };
+
+  // The pill and the browser Back button both come back the same way: pop the
+  // drill entry, which fires popstate and runs restore once.
+  const backToOverview = () => {
+    if (drilledFrom.current) window.history.back();
+  };
+
+  useEffect(() => {
+    const onPop = () => restore();
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+    // restore only touches refs and stable setters, so this binds once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Picking a tab by hand is a fresh intent, so the return offer no longer applies.
   const pickTab = (t: Tab) => {
+    drilledFrom.current = null;
     setReturnFrom(null);
     setTab(t);
   };
