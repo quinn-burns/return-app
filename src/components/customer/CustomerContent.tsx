@@ -575,33 +575,67 @@ function BracketingTab() {
 
 export default function CustomerContent() {
   const [tab, setTab] = useState<Tab>("Overview");
-  // Overview links carry the card they want. Switching tabs unmounts the old
-  // content, so the scroll has to wait until the new tab has actually rendered.
+  // A drill-through from Overview: where to land, and where to come back to.
   const pendingAnchor = useRef<string | null>(null);
+  const pendingScroll = useRef<number | null>(null);
+  const overviewScroll = useRef(0);
+  const [returnFrom, setReturnFrom] = useState<Tab | null>(null);
+
   const go = (next: string, anchor?: string) => {
+    // Remember exactly where they were reading before we send them off.
+    overviewScroll.current = window.scrollY;
+    setReturnFrom(tab);
     pendingAnchor.current = anchor ?? null;
     setTab(next as Tab);
   };
+
+  const backToOverview = () => {
+    if (!returnFrom) return;
+    pendingScroll.current = overviewScroll.current;
+    setReturnFrom(null);
+    setTab(returnFrom);
+  };
+
+  // Picking a tab by hand is a fresh intent, so the return offer no longer applies.
+  const pickTab = (t: Tab) => {
+    setReturnFrom(null);
+    setTab(t);
+  };
+
   useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Coming back: restore the exact scroll position they left from.
+    if (pendingScroll.current != null) {
+      const y = pendingScroll.current;
+      pendingScroll.current = null;
+      requestAnimationFrame(() => window.scrollTo({ top: y, behavior: "auto" }));
+      return;
+    }
+
+    // Going in: scroll to the card and flash it so the source is unmistakable.
     const anchor = pendingAnchor.current;
     if (!anchor) return;
     pendingAnchor.current = null;
     requestAnimationFrame(() => {
-      document.getElementById(anchor)?.scrollIntoView({
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "auto"
-          : "smooth",
-        block: "start",
-      });
+      const el = document.getElementById(anchor);
+      if (!el) return;
+      el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+      el.classList.remove("anchor-flash");
+      // Reflow so the animation restarts even if the same card is revisited.
+      void el.offsetWidth;
+      el.classList.add("anchor-flash");
+      window.setTimeout(() => el.classList.remove("anchor-flash"), 2600);
     });
   }, [tab]);
+
   return (
     <ActionModalProvider>
       <div className="min-h-screen bg-neutral-0">
         <Header />
         <div className="flex flex-col gap-5 px-4 pb-24 pt-3.5">
           <FilterBar tab={tab} />
-          <TabBar tab={tab} onChange={setTab} />
+          <TabBar tab={tab} onChange={pickTab} />
           <p className="-mt-1 text-sm text-neutral-600">{TAB_META[tab].description}</p>
           <AiInsight title={`${tab} Insights`}>{TAB_META[tab].insight}</AiInsight>
           {tab === "Overview" ? (
@@ -617,6 +651,24 @@ export default function CustomerContent() {
           )}
         </div>
       </div>
+      {returnFrom ? (
+        <button
+          type="button"
+          onClick={backToOverview}
+          className="fixed bottom-6 left-6 z-40 flex items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-0 py-2 pl-3 pr-4 text-sm font-medium text-neutral-800 shadow-lg transition-colors hover:bg-neutral-50"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M19 12H5M11 18l-6-6 6-6"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          Back to overview
+        </button>
+      ) : null}
     </ActionModalProvider>
   );
 }

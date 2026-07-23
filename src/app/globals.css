@@ -156,6 +156,36 @@ html::-webkit-scrollbar {
   }
 }
 
+/* Ring pulse on the card an Overview link just jumped to, so it is obvious
+   which one holds the claim. Two pulses, then it settles. */
+@keyframes anchor-flash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(65, 105, 225, 0);
+  }
+  10% {
+    box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.55);
+  }
+  30% {
+    box-shadow: 0 0 0 3px rgba(65, 105, 225, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(65, 105, 225, 0);
+  }
+}
+.anchor-flash {
+  animation: anchor-flash 2.4s ease-out;
+  border-radius: 0.5rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .anchor-flash {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.55);
+  }
+}
+
 /* Radix toast enter/exit + swipe (slides in from the right). */
 @keyframes toast-in {
   from {
