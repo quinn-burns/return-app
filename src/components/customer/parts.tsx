@@ -85,7 +85,15 @@ export function CardHeading({
 }
 
 /** AI-generated insight callout, matching the Overview "AI Returns Summary" card. */
-export function AiInsight({ title = "AI Insight", children }: { title?: string; children: ReactNode }) {
+export function AiInsight({
+  title = "AI Insight",
+  subtitle,
+  children,
+}: {
+  title?: string;
+  subtitle?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <div className="rounded-lg border border-primary-100 bg-primary-50 p-4">
       <div className="flex items-center gap-1.5">
@@ -95,6 +103,7 @@ export function AiInsight({ title = "AI Insight", children }: { title?: string; 
         </span>
         <h2 className="text-xl font-semibold text-primary-700">{title}</h2>
       </div>
+      {subtitle ? <p className="mt-1 text-xs text-neutral-600">{subtitle}</p> : null}
       <p className="mt-1.5 w-full text-sm leading-5 text-neutral-700">{children}</p>
     </div>
   );

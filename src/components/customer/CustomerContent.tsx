@@ -652,10 +652,17 @@ export default function CustomerContent() {
         <div className="flex flex-col gap-5 px-4 pb-24 pt-3.5">
           <FilterBar tab={tab} />
           <TabBar tab={tab} onChange={pickTab} />
-          <p className="-mt-1 text-sm text-neutral-600">{TAB_META[tab].description}</p>
+          {/* Insight tabs fold the description into the box so the framing and
+              the finding read as one block, not a grey line stacked on a blue one.
+              Overview has no box here (its AI section lives in OverviewTab), so it
+              keeps the standalone line. */}
           {TAB_META[tab].insight ? (
-            <AiInsight title={`${tab} Insights`}>{TAB_META[tab].insight}</AiInsight>
-          ) : null}
+            <AiInsight title={`${tab} Insights`} subtitle={TAB_META[tab].description}>
+              {TAB_META[tab].insight}
+            </AiInsight>
+          ) : (
+            <p className="-mt-1 text-sm text-neutral-600">{TAB_META[tab].description}</p>
+          )}
           {tab === "Overview" ? (
             <OverviewTab onGo={go} />
           ) : tab === "Bracketing" ? (
