@@ -216,12 +216,18 @@ const TONE_BG: Record<Read["tone"], string> = {
     outcome is good, worth watching, or costing you. Reads at a glance —
     biggest blocks are where your customers are, red is where they leak. */
 export function JourneyTreemap({ journeys }: { journeys: Journey[] }) {
+  const [hoverKey, setHoverKey] = useState<string | null>(null);
+  const [pos, setPos] = useState<{ x: number; y: number; w: number } | null>(null);
+
   const top = [...journeys].sort((a, b) => b.customers - a.customers).slice(0, 14);
   const laid = binaryTreemap(
     top.map((j) => ({ value: j.customers, j })),
     { x: 0, y: 0, w: 100, h: 100 },
     true,
   );
+  const hovered = hoverKey ? top.find((j) => j.key === hoverKey) : null;
+  const hoveredRead = hovered ? readJourney(hovered) : null;
+
   return (
     <Card>
       <CardHeading
@@ -242,44 +248,98 @@ export function JourneyTreemap({ journeys }: { journeys: Journey[] }) {
           </span>
         ))}
       </div>
-      <div className="relative mt-3 h-[360px] w-full">
+      <div
+        className="relative mt-3 h-[380px] w-full"
+        onMouseMove={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          setPos({ x: e.clientX - r.left, y: e.clientY - r.top, w: r.width });
+        }}
+        onMouseLeave={() => {
+          setHoverKey(null);
+          setPos(null);
+        }}
+      >
         {laid.map(({ j, x, y, w, h }) => {
           const read = readJourney(j);
+          // What each block says on its own, before any hover. Bigger blocks get
+          // the path and the money; the smallest get just a number.
           const short = j.cameBack
             ? `${j.steps[1].label} → ${j.steps[3].label}`
             : `${j.steps[1].label}, gone`;
-          const showLabel = w > 15 && h > 15;
-          const showCount = w > 9 && h > 9;
+          const showPath = w > 16 && h > 22;
+          const showValue = w > 13 && h > 30;
+          const showCount = w > 8 && h > 11;
           return (
             <div
               key={j.key}
-              className="absolute overflow-hidden rounded-[3px] p-1.5 text-neutral-0"
+              className="absolute flex cursor-default flex-col justify-between gap-1 overflow-hidden rounded-[3px] p-2 text-neutral-0 ring-inset transition-[box-shadow]"
               style={{
                 left: `${x}%`,
                 top: `${y}%`,
                 width: `calc(${w}% - 3px)`,
                 height: `calc(${h}% - 3px)`,
                 backgroundColor: TONE_BG[read.tone],
+                boxShadow: hoverKey === j.key ? "inset 0 0 0 2px rgba(255,255,255,0.9)" : "none",
               }}
-              title={`${j.steps.map((s) => s.label).join(" → ")} · ${fmtN(j.customers)} customers · ${fmtMoney(j.net)}`}
+              onMouseEnter={() => setHoverKey(j.key)}
             >
-              <div className="flex h-full flex-col justify-between gap-1">
-                {showLabel ? (
-                  <span className="truncate text-[10px] font-medium leading-tight opacity-90">
-                    {short}
-                  </span>
-                ) : (
-                  <span />
-                )}
-                {showCount ? <span className="text-sm font-bold leading-none">{fmtN(j.customers)}</span> : null}
-              </div>
+              {showPath ? (
+                <span className="line-clamp-2 text-[11px] font-medium leading-tight opacity-90">
+                  {short}
+                </span>
+              ) : (
+                <span />
+              )}
+              <span className="leading-none">
+                {showCount ? <span className="text-sm font-bold">{fmtN(j.customers)}</span> : null}
+                {showValue ? (
+                  <span className="ml-1 text-[11px] font-medium opacity-90">{fmtMoney(j.net)}</span>
+                ) : null}
+              </span>
             </div>
           );
         })}
+
+        {/* Cursor-following detail, so every block is legible even when it is too
+            small to carry its own label. */}
+        {hovered && hoveredRead && pos ? (
+          <div
+            className="pointer-events-none absolute z-10 w-max max-w-[260px] rounded-lg border border-neutral-200 bg-neutral-0 px-3 py-2 shadow-lg"
+            style={{
+              left: pos.x,
+              top: pos.y,
+              transform: `translate(${pos.x > pos.w * 0.7 ? "calc(-100% - 16px)" : "16px"}, -50%)`,
+            }}
+          >
+            <p className="text-xs font-semibold text-neutral-800">
+              {hovered.steps.map((s) => s.label).join(" → ")}
+            </p>
+            <p
+              className="mt-0.5 text-[11px] font-medium"
+              style={{ color: TONE_BG[hoveredRead.tone] }}
+            >
+              {hoveredRead.verdict}
+            </p>
+            <dl className="mt-1 flex flex-col gap-0.5 text-[11px] text-neutral-600">
+              <div className="flex items-center justify-between gap-4">
+                <dt>Customers</dt>
+                <dd className="font-semibold text-neutral-800">{fmtN(hovered.customers)}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <dt>Net value</dt>
+                <dd className="font-semibold text-neutral-800">{fmtMoney(hovered.net)}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <dt>Per customer</dt>
+                <dd className="font-semibold text-neutral-800">{fmtMoney(hovered.perCust)}</dd>
+              </div>
+            </dl>
+          </div>
+        ) : null}
       </div>
       <p className="mt-2.5 text-[11px] leading-4 text-neutral-600">
         The biggest blocks are where most of your customers are; the red ones are the journeys
-        leaking value. Hover any block for its full path and net value.
+        leaking value. Hover any block for its full path and value.
       </p>
     </Card>
   );
