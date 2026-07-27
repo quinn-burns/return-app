@@ -253,17 +253,10 @@ function Select({
 
 /* ---------------------------- module ----------------------------- */
 
-export default function JourneysModule({
-  journeys,
-  sankey,
-}: {
-  journeys: Journey[];
-  sankey: React.ReactNode;
-}) {
+export default function JourneysModule({ journeys }: { journeys: Journey[] }) {
   const [preset, setPreset] = useState<Preset>("all");
   const [metric, setMetric] = useState<Metric>("customers");
   const [sort, setSort] = useState<SortBy>("biggest");
-  const [showFlow, setShowFlow] = useState(false);
 
   const rows = useMemo(() => {
     let list = journeys;
@@ -405,20 +398,6 @@ export default function JourneysModule({
       </ol>
 
       <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
-
-      <div className="mt-4 border-t border-neutral-150 pt-3">
-        <button
-          type="button"
-          onClick={() => setShowFlow((s) => !s)}
-          className="flex items-center gap-1.5 text-xs font-medium text-primary-600 hover:text-primary-700"
-        >
-          <span aria-hidden="true" className={`transition-transform ${showFlow ? "rotate-90" : ""}`}>
-            ›
-          </span>
-          {showFlow ? "Hide the whole flow" : "See the whole flow"}
-        </button>
-        {showFlow ? <div className="mt-4">{sankey}</div> : null}
-      </div>
 
       <p className="mt-3 text-[11px] text-neutral-600">
         Period-on-period movement is illustrative in this prototype.

@@ -300,6 +300,8 @@ function Sankey() {
   const [hover, setHover] = useState<{ kind: "rib"; i: number } | { kind: "node"; id: string } | null>(
     null,
   );
+  // Cursor position within the chart, so the tooltip can follow the pointer.
+  const [pos, setPos] = useState<{ x: number; y: number; w: number } | null>(null);
 
   // Drill-through selection, one entry per stage. Picking a node narrows the
   // population that flows onward, so every column to its right is recounted.
@@ -546,6 +548,8 @@ function Sankey() {
   const crumbs = [sel.bracket, sel.outcome, sel.next, sel.dept].filter(Boolean) as string[];
   // How many customers survive the path, counted at the last stage picked.
   const reachedNow = crumbs.length ? nodeCount[crumbs[crumbs.length - 1]] : SANKEY_TOTAL;
+  const lastId = crumbs[crumbs.length - 1];
+  const selValue = reachedNow * (lastId ? perNodeVal[lastId] || 0 : 0);
 
   // Derived from hover rather than stored, so it can never fall out of step
   // with what the pointer is actually over.
@@ -585,44 +589,71 @@ function Sankey() {
         ))}
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-neutral-150 bg-neutral-50 px-3 py-2 text-xs">
-        <span className="font-semibold text-neutral-700">Path</span>
-        <span className="text-neutral-600">All customers</span>
-        {crumbs.map((id) => (
-          <span key={id} className="flex items-center gap-2 text-neutral-600">
-            <span className="text-neutral-400">›</span>
-            <span className="rounded-full bg-neutral-0 px-2 py-0.5 font-medium text-neutral-800 ring-1 ring-neutral-150">
-              {nameOf(id)}
+      {/* Accented path bar. The numbers are the headline; the chips just say
+          which path they belong to. */}
+      <div className="mb-3 rounded-lg border border-primary-100 bg-primary-50 px-3.5 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+            <span className="font-semibold uppercase tracking-wide text-primary-600">Path</span>
+            <span className="rounded-full bg-neutral-0 px-2 py-0.5 font-medium text-neutral-700 ring-1 ring-neutral-150">
+              All customers
             </span>
-          </span>
-        ))}
-        <span className="ml-auto flex items-center gap-3">
-          <span className="text-neutral-600">
-            <span className="font-semibold text-neutral-800">{sFmt(reachedNow)}</span> customers ·{" "}
-            <span className="font-semibold text-neutral-800">
-              {((reachedNow / SANKEY_TOTAL) * 100).toFixed(1)}%
-            </span>{" "}
-            of total
-          </span>
-          {crumbs.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setSel({})}
-              className="rounded-md border border-neutral-200 bg-neutral-0 px-2 py-1 font-medium text-neutral-700 hover:bg-neutral-100"
-            >
-              Reset
-            </button>
-          )}
-        </span>
+            {crumbs.map((id) => (
+              <span key={id} className="flex items-center gap-1.5">
+                <span className="text-primary-400">›</span>
+                <span className="rounded-full bg-neutral-0 px-2 py-0.5 font-medium text-neutral-800 ring-1 ring-primary-200">
+                  {nameOf(id)}
+                </span>
+              </span>
+            ))}
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <div className="flex items-baseline justify-end gap-1.5">
+                <span className="text-2xl font-bold leading-none text-neutral-800">
+                  {sFmt(reachedNow)}
+                </span>
+                <span className="text-xs text-neutral-600">
+                  customers · {((reachedNow / SANKEY_TOTAL) * 100).toFixed(1)}%
+                </span>
+              </div>
+              {crumbs.length ? (
+                <div className="mt-0.5 text-xs text-neutral-600">
+                  ≈ <span className="font-semibold text-neutral-800">{sMoney(selValue)}</span> total
+                  value
+                </div>
+              ) : null}
+            </div>
+            {crumbs.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setSel({})}
+                className="rounded-md border border-neutral-200 bg-neutral-0 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-100"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
+      <div
+        className="relative"
+        onMouseMove={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          setPos({ x: e.clientX - r.left, y: e.clientY - r.top, w: r.width });
+        }}
+        onMouseLeave={() => {
+          setHover(null);
+          setPos(null);
+        }}
+      >
       <svg
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
         style={{ display: "block", width: "100%", height: "auto" }}
         role="img"
         aria-label="Behavioral flow Sankey diagram"
-        onMouseLeave={() => setHover(null)}
       >
         {headers.map((h, i) => (
           <text
@@ -707,36 +738,134 @@ function Sankey() {
         })}
       </svg>
 
-      <div className="mt-2 min-h-[42px] text-xs text-neutral-600">
-        {tip ? (
-          <>
-            <span className="font-semibold text-neutral-800">{tip.title}</span>
-            <div className="mt-0.5 flex flex-wrap gap-4">
-              <span>
-                Customers: <span className="text-neutral-800">{sFmt(tip.cust)}</span>
-              </span>
-              <span>
-                Total value: <span className="text-neutral-800">{sMoney(tip.cust * tip.avg)}</span>
-              </span>
-              <span>
-                Avg / customer: <span className="text-neutral-800">{sMoney(tip.avg)}</span>
-              </span>
-            </div>
-          </>
-        ) : crumbs.length ? (
-          "Every column to the right has been recounted for this path — click a node again to step back out."
-        ) : (
-          "Hover for customers and value; click any bar, label or flow to drill into that journey."
-        )}
+        {/* Tooltip follows the cursor, so the numbers are read right where you
+            are pointing rather than down at the bottom of the chart. */}
+        {tip && pos ? (
+          <div
+            className="pointer-events-none absolute z-10 w-max max-w-[240px] rounded-lg border border-neutral-200 bg-neutral-0 px-3 py-2 shadow-lg"
+            style={{
+              left: pos.x,
+              top: pos.y,
+              transform: `translate(${pos.x > pos.w * 0.7 ? "calc(-100% - 16px)" : "16px"}, -50%)`,
+            }}
+          >
+            <p className="text-xs font-semibold text-neutral-800">{tip.title}</p>
+            <dl className="mt-1 flex flex-col gap-0.5 text-[11px] text-neutral-600">
+              <div className="flex items-center justify-between gap-4">
+                <dt>Customers</dt>
+                <dd className="font-semibold text-neutral-800">{sFmt(tip.cust)}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <dt>Total value</dt>
+                <dd className="font-semibold text-neutral-800">{sMoney(tip.cust * tip.avg)}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <dt>Avg / customer</dt>
+                <dd className="font-semibold text-neutral-800">{sMoney(tip.avg)}</dd>
+              </div>
+            </dl>
+          </div>
+        ) : null}
       </div>
+
+      <p className="mt-2 text-xs text-neutral-600">
+        {crumbs.length
+          ? "Every column to the right is recounted for this path — click a lit node again to step back."
+          : "Hover any bar or flow for its numbers; click to trace a path through the whole journey."}
+      </p>
     </div>
+  );
+}
+
+function SankeyFlow() {
+  return (
+    <Card>
+      <CardHeading
+        title="Behavioral flow"
+        subtitle="How customers move from bracketing, through what they keep, to whether they come back and what they buy next. Hover any bar or flow for its numbers; click to trace a path."
+      />
+      <div className="mt-4">
+        <Sankey />
+      </div>
+    </Card>
+  );
+}
+
+/* An alternative to the Sankey for the same first two stages: column width is
+   how common each bracketing type is, block height is what happened on the first
+   order, so a block's area is the number of customers. Reads as composition
+   rather than flow. */
+function Composition() {
+  const total = SANKEY_TOTAL;
+  const bracketN = S_BRACKETS.map((b) => b.share * total);
+  return (
+    <Card>
+      <CardHeading
+        title="Composition view"
+        subtitle="Column width = how common that way of ordering is. Block height = what happened first order. So each block's area is its number of customers."
+      />
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+        {S_OUTCOMES.map((o) => (
+          <span key={o.id} className="flex items-center gap-1.5 text-[11px] text-neutral-600">
+            <span className="size-2.5 rounded-[3px]" style={{ backgroundColor: o.color }} />
+            {o.label}
+          </span>
+        ))}
+      </div>
+      <div className="mt-3 flex h-[300px] items-stretch gap-1.5">
+        {S_BRACKETS.map((b, bi) => (
+          <div
+            key={b.id}
+            className="flex min-w-0 flex-col"
+            style={{ flexGrow: b.share, flexBasis: 0 }}
+          >
+            <div className="mb-1 min-w-0">
+              <div className="truncate text-xs font-semibold text-neutral-800">{b.label}</div>
+              <div className="text-[10px] text-neutral-500">{sFmt(bracketN[bi])}</div>
+            </div>
+            <div className="flex flex-1 flex-col gap-0.5 overflow-hidden rounded-[5px]">
+              {S_OUTCOMES.map((o) => {
+                const share = b.out[o.id];
+                if (share <= 0) return null;
+                const light = o.id === "keptall";
+                return (
+                  <div
+                    key={o.id}
+                    className="flex items-center justify-center overflow-hidden text-center"
+                    style={{ height: `${share * 100}%`, backgroundColor: o.color }}
+                    title={`${b.label} → ${o.label}: ${Math.round(share * 100)}%`}
+                  >
+                    {share >= 0.14 ? (
+                      <span
+                        className={`px-1 text-[10px] font-semibold leading-tight ${
+                          light ? "text-neutral-800" : "text-neutral-0"
+                        }`}
+                      >
+                        {Math.round(share * 100)}%
+                      </span>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="mt-2.5 text-[11px] leading-4 text-neutral-600">
+        Read it as: a wide column is a common way to order; a tall dark-blue block is
+        &ldquo;returned everything.&rdquo; A wide column that is mostly dark blue is where volume and
+        loss overlap — the place to act first.
+      </p>
+    </Card>
   );
 }
 
 export default function BehavioralFlowTab() {
   return (
     <>
-      <JourneysModule journeys={JOURNEYS} sankey={<Sankey />} />
+      <JourneysModule journeys={JOURNEYS} />
+      <SankeyFlow />
+      <Composition />
       <JourneyExplorer />
     </>
   );
