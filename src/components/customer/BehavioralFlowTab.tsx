@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Card, CardHeading } from "./parts";
-import JourneysModule, { buildJourneys } from "./JourneysModule";
+import JourneysModule, { buildJourneys, JourneyTreemap } from "./JourneysModule";
 
 /* ----------------------------- model ----------------------------- */
 
@@ -533,13 +533,17 @@ function Sankey() {
     });
   };
 
-  // Ribbons are click targets too: a flow names both ends of the step it
-  // represents, so clicking one drills straight to that path.
-  const pickPath = (src: string, dst: string) => {
-    const st = stageOf(src);
-    if (st === "bracket") setSel({ bracket: src, outcome: dst });
-    else if (st === "outcome") setSel((p) => ({ bracket: p.bracket, outcome: src, next: dst }));
-    else setSel((p) => ({ bracket: p.bracket, outcome: p.outcome, next: "next", dept: dst }));
+  // Selecting a stage without toggling: set this stage, clear the narrower ones
+  // downstream. Clicking a ribbon selects only its source, so the path never
+  // jumps two stages at once from a single click.
+  const selectStage = (id: string) => {
+    const st = stageOf(id);
+    setSel((prev) => {
+      if (st === "bracket") return { bracket: id };
+      if (st === "outcome") return { bracket: prev.bracket, outcome: id };
+      if (st === "next") return { bracket: prev.bracket, outcome: prev.outcome, next: id };
+      return { bracket: prev.bracket, outcome: prev.outcome, next: "next", dept: id };
+    });
   };
 
   const nameOf = (id: string) =>
@@ -692,7 +696,7 @@ function Sankey() {
               fill={r.l.color}
               fillOpacity={op}
               style={{ cursor: "pointer", transition: "fill-opacity 120ms" }}
-              onClick={() => pickPath(r.l.src, r.l.dst)}
+              onClick={() => selectStage(r.l.src)}
               onMouseEnter={() => setHover({ kind: "rib", i })}
             />
           );
@@ -733,6 +737,18 @@ function Sankey() {
                   {n.label} · {sFmt(nodeCount[n.id])}
                 </text>
               )}
+              {/* Wider transparent target so clicking the bar is reliable even
+                  where it is thin — a plain bar is only ~20px in this viewBox. */}
+              <rect
+                x={n.x - 8}
+                y={mid - Math.max(h, 20) / 2}
+                width={colW + 16}
+                height={Math.max(h, 20)}
+                fill="transparent"
+                style={{ cursor: "pointer" }}
+                onClick={() => pick(n.id)}
+                onMouseEnter={() => setHover({ kind: "node", id: n.id })}
+              />
             </g>
           );
         })}
@@ -791,81 +807,12 @@ function SankeyFlow() {
   );
 }
 
-/* An alternative to the Sankey for the same first two stages: column width is
-   how common each bracketing type is, block height is what happened on the first
-   order, so a block's area is the number of customers. Reads as composition
-   rather than flow. */
-function Composition() {
-  const total = SANKEY_TOTAL;
-  const bracketN = S_BRACKETS.map((b) => b.share * total);
-  return (
-    <Card>
-      <CardHeading
-        title="Composition view"
-        subtitle="Column width = how common that way of ordering is. Block height = what happened first order. So each block's area is its number of customers."
-      />
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
-        {S_OUTCOMES.map((o) => (
-          <span key={o.id} className="flex items-center gap-1.5 text-[11px] text-neutral-600">
-            <span className="size-2.5 rounded-[3px]" style={{ backgroundColor: o.color }} />
-            {o.label}
-          </span>
-        ))}
-      </div>
-      <div className="mt-3 flex h-[300px] items-stretch gap-1.5">
-        {S_BRACKETS.map((b, bi) => (
-          <div
-            key={b.id}
-            className="flex min-w-0 flex-col"
-            style={{ flexGrow: b.share, flexBasis: 0 }}
-          >
-            <div className="mb-1 min-w-0">
-              <div className="truncate text-xs font-semibold text-neutral-800">{b.label}</div>
-              <div className="text-[10px] text-neutral-500">{sFmt(bracketN[bi])}</div>
-            </div>
-            <div className="flex flex-1 flex-col gap-0.5 overflow-hidden rounded-[5px]">
-              {S_OUTCOMES.map((o) => {
-                const share = b.out[o.id];
-                if (share <= 0) return null;
-                const light = o.id === "keptall";
-                return (
-                  <div
-                    key={o.id}
-                    className="flex items-center justify-center overflow-hidden text-center"
-                    style={{ height: `${share * 100}%`, backgroundColor: o.color }}
-                    title={`${b.label} → ${o.label}: ${Math.round(share * 100)}%`}
-                  >
-                    {share >= 0.14 ? (
-                      <span
-                        className={`px-1 text-[10px] font-semibold leading-tight ${
-                          light ? "text-neutral-800" : "text-neutral-0"
-                        }`}
-                      >
-                        {Math.round(share * 100)}%
-                      </span>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-      <p className="mt-2.5 text-[11px] leading-4 text-neutral-600">
-        Read it as: a wide column is a common way to order; a tall dark-blue block is
-        &ldquo;returned everything.&rdquo; A wide column that is mostly dark blue is where volume and
-        loss overlap — the place to act first.
-      </p>
-    </Card>
-  );
-}
-
 export default function BehavioralFlowTab() {
   return (
     <>
-      <JourneysModule journeys={JOURNEYS} />
       <SankeyFlow />
-      <Composition />
+      <JourneysModule journeys={JOURNEYS} />
+      <JourneyTreemap journeys={JOURNEYS} />
       <JourneyExplorer />
     </>
   );

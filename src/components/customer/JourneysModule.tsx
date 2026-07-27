@@ -168,6 +168,123 @@ function fmtMoney(v: number) {
   return `${s}$${Math.round(a)}`;
 }
 
+/* --------------------------- treemap ----------------------------- */
+
+type TRect = { x: number; y: number; w: number; h: number };
+
+/* A binary-split treemap: recursively cut the rectangle into two groups of
+   roughly equal value, alternating direction. Simple and always valid, which is
+   what we want here over a fancier squarified layout. */
+function binaryTreemap<T extends { value: number }>(
+  items: T[],
+  rect: TRect,
+  horizontal: boolean,
+): (T & TRect)[] {
+  if (items.length === 0) return [];
+  if (items.length === 1) return [{ ...items[0], ...rect }];
+  const total = items.reduce((s, i) => s + i.value, 0);
+  let acc = 0;
+  let idx = 0;
+  for (; idx < items.length - 1; idx++) {
+    if (idx > 0 && acc + items[idx].value > total / 2) break;
+    acc += items[idx].value;
+  }
+  const a = items.slice(0, idx);
+  const b = items.slice(idx);
+  const frac = total > 0 ? a.reduce((s, i) => s + i.value, 0) / total : 0.5;
+  if (horizontal) {
+    const w1 = rect.w * frac;
+    return [
+      ...binaryTreemap(a, { ...rect, w: w1 }, !horizontal),
+      ...binaryTreemap(b, { x: rect.x + w1, y: rect.y, w: rect.w - w1, h: rect.h }, !horizontal),
+    ];
+  }
+  const h1 = rect.h * frac;
+  return [
+    ...binaryTreemap(a, { ...rect, h: h1 }, !horizontal),
+    ...binaryTreemap(b, { x: rect.x, y: rect.y + h1, w: rect.w, h: rect.h - h1 }, !horizontal),
+  ];
+}
+
+const TONE_BG: Record<Read["tone"], string> = {
+  good: "#0f7a63",
+  warn: "#d97706",
+  bad: "#dc2828",
+};
+
+/** Journeys as a treemap: block size is customers, colour is whether the
+    outcome is good, worth watching, or costing you. Reads at a glance —
+    biggest blocks are where your customers are, red is where they leak. */
+export function JourneyTreemap({ journeys }: { journeys: Journey[] }) {
+  const top = [...journeys].sort((a, b) => b.customers - a.customers).slice(0, 14);
+  const laid = binaryTreemap(
+    top.map((j) => ({ value: j.customers, j })),
+    { x: 0, y: 0, w: 100, h: 100 },
+    true,
+  );
+  return (
+    <Card>
+      <CardHeading
+        title="Where your customers are"
+        subtitle="Each block is one complete journey. Its size is how many customers took it; its colour is whether that ending is good, worth watching, or costing you."
+      />
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-neutral-600">
+        {(
+          [
+            ["good", "Winning"],
+            ["warn", "Watch"],
+            ["bad", "Costing you"],
+          ] as [Read["tone"], string][]
+        ).map(([tone, label]) => (
+          <span key={tone} className="flex items-center gap-1.5">
+            <span className="size-2.5 rounded-[3px]" style={{ backgroundColor: TONE_BG[tone] }} />
+            {label}
+          </span>
+        ))}
+      </div>
+      <div className="relative mt-3 h-[360px] w-full">
+        {laid.map(({ j, x, y, w, h }) => {
+          const read = readJourney(j);
+          const short = j.cameBack
+            ? `${j.steps[1].label} → ${j.steps[3].label}`
+            : `${j.steps[1].label}, gone`;
+          const showLabel = w > 15 && h > 15;
+          const showCount = w > 9 && h > 9;
+          return (
+            <div
+              key={j.key}
+              className="absolute overflow-hidden rounded-[3px] p-1.5 text-neutral-0"
+              style={{
+                left: `${x}%`,
+                top: `${y}%`,
+                width: `calc(${w}% - 3px)`,
+                height: `calc(${h}% - 3px)`,
+                backgroundColor: TONE_BG[read.tone],
+              }}
+              title={`${j.steps.map((s) => s.label).join(" → ")} · ${fmtN(j.customers)} customers · ${fmtMoney(j.net)}`}
+            >
+              <div className="flex h-full flex-col justify-between gap-1">
+                {showLabel ? (
+                  <span className="truncate text-[10px] font-medium leading-tight opacity-90">
+                    {short}
+                  </span>
+                ) : (
+                  <span />
+                )}
+                {showCount ? <span className="text-sm font-bold leading-none">{fmtN(j.customers)}</span> : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-2.5 text-[11px] leading-4 text-neutral-600">
+        The biggest blocks are where most of your customers are; the red ones are the journeys
+        leaking value. Hover any block for its full path and net value.
+      </p>
+    </Card>
+  );
+}
+
 /** Anything past this much movement is worth being told about unprompted. */
 const ALERT_AT = 20;
 
