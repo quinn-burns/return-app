@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ActionModalProvider } from "./ActionSubmit";
 import { AiInsight, Donut, Pagination, TakeAction, usePaged, useReveal } from "./parts";
 import { FILLER_DEPTS, countStr, money, pctStr, seeded } from "./filler";
+import { TABS, TAB_SLUG, SLUG_TAB, type Tab } from "./tabs";
 import {
   BRAND_OPTS,
   COUNTRY_OPTS,
@@ -23,21 +25,8 @@ import OverviewTab from "./OverviewTab";
 
 /* ----------------------------- data ----------------------------- */
 
-const TABS = ["Overview", "Bracketing", "Exchange", "Segments", "Behavioral Flow"] as const;
-type Tab = (typeof TABS)[number];
-
-// The tab lives in the URL (?tab=bracketing) so a view can be bookmarked, deep
-// linked, and — the point — forwarded to someone else.
-const TAB_SLUG: Record<Tab, string> = {
-  Overview: "overview",
-  Bracketing: "bracketing",
-  Exchange: "exchange",
-  Segments: "segments",
-  "Behavioral Flow": "behavioral-flow",
-};
-const SLUG_TAB: Record<string, Tab> = Object.fromEntries(
-  (Object.entries(TAB_SLUG) as [Tab, string][]).map(([t, s]) => [s, t]),
-);
+// TABS / TAB_SLUG / SLUG_TAB / Tab now live in ./tabs so the server page and this
+// client component share one slug source. The tab itself lives in the URL.
 
 // Overview folds its AI summary into OverviewTab's own panel, so it has no
 // standalone insight here — hence insight is optional.
@@ -626,84 +615,55 @@ function BracketingTab() {
 
 /* ----------------------------- page ------------------------------ */
 
-export default function CustomerContent() {
-  const [tab, setTab] = useState<Tab>("Overview");
-  // A drill-through from Overview: where to land, and where to come back to.
+export default function CustomerContent({ initialTab }: { initialTab: Tab }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  // The URL is the source of truth. useSearchParams drives client transitions and
+  // Back/Forward (the router owns popstate); initialTab is the server-resolved
+  // value, used until useSearchParams has one so the first render matches the HTML.
+  const slug = searchParams.get("tab");
+  const tab: Tab = (slug && SLUG_TAB[slug]) || initialTab;
+
+  // Drill-through carries a card to flash and the origin scroll to return to.
   const pendingAnchor = useRef<string | null>(null);
-  const pendingScroll = useRef<number | null>(null);
   const overviewScroll = useRef(0);
-  // Where a drill started, in a ref so the popstate listener always sees it.
-  const drilledFrom = useRef<Tab | null>(null);
   const [returnFrom, setReturnFrom] = useState<Tab | null>(null);
 
+  const navigate = (t: Tab) => router.push(`?tab=${TAB_SLUG[t]}`, { scroll: false });
+
+  // Picking a tab by hand: a plain URL navigation, and a fresh intent, so any
+  // pending "back to overview" offer is dropped.
+  const selectTab = (t: Tab) => {
+    setReturnFrom(null);
+    navigate(t);
+  };
+
+  // Drill from Overview: navigate to the tab, remember where to return, and stash
+  // the card to scroll to and flash once the new panel renders.
   const go = (next: string, anchor?: string) => {
-    // Remember exactly where they were reading before we send them off.
     overviewScroll.current = window.scrollY;
-    drilledFrom.current = tab;
-    setReturnFrom(tab);
     pendingAnchor.current = anchor ?? null;
-    // A history entry so the browser Back button undoes the drill like anything
-    // else. The pill routes through the same entry via history.back().
-    window.history.pushState({ customerDrill: true }, "");
-    setTab(next as Tab);
+    setReturnFrom(tab);
+    navigate(next as Tab);
   };
 
-  const restore = () => {
-    const from = drilledFrom.current;
-    if (!from) return;
-    drilledFrom.current = null;
-    pendingScroll.current = overviewScroll.current;
-    setReturnFrom(null);
-    setTab(from);
-  };
+  // Back button and the pill are the same thing now: step back in history, which
+  // the router turns into the previous ?tab.
+  const backToOverview = () => router.back();
 
-  // The pill and the browser Back button both come back the same way: pop the
-  // drill entry, which fires popstate and runs restore once.
-  const backToOverview = () => {
-    if (drilledFrom.current) window.history.back();
-  };
-
+  // One effect drives both directions of a drill, keyed on the URL-derived tab:
+  // landing back where a drill started restores the scroll; landing on the target
+  // scrolls to the card and flashes it.
   useEffect(() => {
-    const onPop = () => restore();
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-    // restore only touches refs and stable setters, so this binds once.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Open on the tab named in the URL. Done in an effect, not the initial state,
-  // so server and first client render agree (they both start on Overview).
-  useEffect(() => {
-    const slug = new URLSearchParams(window.location.search).get("tab");
-    if (slug && SLUG_TAB[slug]) setTab(SLUG_TAB[slug]);
-  }, []);
-
-  // Picking a tab by hand is a fresh intent, so the return offer no longer applies.
-  const pickTab = (t: Tab) => {
-    drilledFrom.current = null;
-    setReturnFrom(null);
-    setTab(t);
-  };
-
-  useEffect(() => {
-    // The new tab is already committed to the DOM by the time this runs, so the
-    // scroll happens directly rather than inside requestAnimationFrame — rAF is
-    // paused on a hidden page, which would silently drop it.
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    // Keep the URL in step with the tab, preserving any history state (e.g. the
-    // drill marker) so Back still works.
-    window.history.replaceState(window.history.state, "", `?tab=${TAB_SLUG[tab]}`);
-
-    // Coming back: restore the exact scroll position they left from.
-    if (pendingScroll.current != null) {
-      const y = pendingScroll.current;
-      pendingScroll.current = null;
+    if (returnFrom && tab === returnFrom) {
+      const y = overviewScroll.current;
+      setReturnFrom(null);
       window.scrollTo({ top: y, behavior: "auto" });
       return;
     }
 
-    // Going in: scroll to the card and flash it so the source is unmistakable.
     const anchor = pendingAnchor.current;
     if (!anchor) return;
     pendingAnchor.current = null;
@@ -715,6 +675,8 @@ export default function CustomerContent() {
     void el.offsetWidth;
     el.classList.add("anchor-flash");
     window.setTimeout(() => el.classList.remove("anchor-flash"), 2600);
+    // returnFrom is read but intentionally not a dep: this should fire on tab change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
   return (
@@ -725,7 +687,7 @@ export default function CustomerContent() {
           <FilterBar tab={tab} />
           <div className="flex items-end justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <TabBar tab={tab} onChange={pickTab} />
+              <TabBar tab={tab} onChange={selectTab} />
             </div>
             <CopyLinkButton />
           </div>
@@ -756,7 +718,7 @@ export default function CustomerContent() {
           )}
         </div>
       </div>
-      {returnFrom ? (
+      {returnFrom && tab !== returnFrom ? (
         <button
           type="button"
           onClick={backToOverview}
