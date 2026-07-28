@@ -229,7 +229,7 @@ export default function CustomerContent({ initialTab }: { initialTab: Tab }) {
 
   // Back button and the pill are the same thing now: step back in history, which
   // the router turns into the previous ?tab.
-  const backToOverview = () => router.back();
+  const backToBriefing = () => router.back();
 
   // One effect drives both directions of a drill, keyed on the URL-derived tab:
   // landing back where a drill started restores the scroll; landing on the target
@@ -304,7 +304,7 @@ export default function CustomerContent({ initialTab }: { initialTab: Tab }) {
       {returnFrom && tab !== returnFrom ? (
         <button
           type="button"
-          onClick={backToOverview}
+          onClick={backToBriefing}
           className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-0 py-2 pl-3 pr-4 text-sm font-medium text-neutral-800 shadow-lg transition-colors hover:bg-neutral-50"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -316,7 +316,7 @@ export default function CustomerContent({ initialTab }: { initialTab: Tab }) {
               strokeLinejoin="round"
             />
           </svg>
-          Back to overview
+          Back to Briefing
         </button>
       ) : null}
     </ActionModalProvider>
