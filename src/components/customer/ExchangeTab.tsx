@@ -246,7 +246,7 @@ function PromoteTable({
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-neutral-200 text-neutral-600">
+            <tr className="border-b border-neutral-200 text-[11px] text-neutral-600 [text-wrap:balance]">
               <th className="py-2 pr-2 align-bottom font-normal leading-tight">Department</th>
               <th className="px-2 py-2 text-right align-bottom font-normal leading-tight">Return Revenue</th>
               <th className="px-2 py-2 text-right align-bottom font-normal leading-tight">{pctLabel}</th>
@@ -298,7 +298,7 @@ function GuidanceTable({
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-neutral-200 text-neutral-600">
+            <tr className="border-b border-neutral-200 text-[11px] text-neutral-600 [text-wrap:balance]">
               <th className="py-2 pr-2 align-bottom font-normal leading-tight">Department</th>
               <th className="px-2 py-2 text-right align-bottom font-normal leading-tight">Return Revenue</th>
               <th className="px-2 py-2 text-right align-bottom font-normal leading-tight">{pctLabel}</th>

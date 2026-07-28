@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Card, CardHeading } from "./parts";
 import JourneysModule, { buildJourneys, JourneyTreemap } from "./JourneysModule";
 
@@ -808,11 +808,19 @@ function SankeyFlow() {
 }
 
 export default function BehavioralFlowTab() {
+  // Clicking a treemap block sends its journey to the ranked table above, where
+  // the row carries the recommended action. The counter makes each click a fresh
+  // request, so re-clicking the same block re-triggers the jump.
+  const [focus, setFocus] = useState<{ key: string; n: number } | null>(null);
+  const focusN = useRef(0);
   return (
     <>
       <SankeyFlow />
-      <JourneysModule journeys={JOURNEYS} />
-      <JourneyTreemap journeys={JOURNEYS} />
+      <JourneysModule journeys={JOURNEYS} focus={focus} />
+      <JourneyTreemap
+        journeys={JOURNEYS}
+        onFocus={(key) => setFocus({ key, n: ++focusN.current })}
+      />
       <JourneyExplorer />
     </>
   );

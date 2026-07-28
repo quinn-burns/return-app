@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useActionModal } from "./ActionSubmit";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardHeading, Pagination, TakeAction, usePaged } from "./parts";
 import { seeded } from "./filler";
 
@@ -216,8 +215,13 @@ const TONE_BG: Record<Read["tone"], string> = {
 /** Journeys as a treemap: block size is customers, color is whether the
     outcome is good, worth watching, or costing you. Reads at a glance —
     biggest blocks are where your customers are, red is where they leak. */
-export function JourneyTreemap({ journeys }: { journeys: Journey[] }) {
-  const { open } = useActionModal();
+export function JourneyTreemap({
+  journeys,
+  onFocus,
+}: {
+  journeys: Journey[];
+  onFocus?: (key: string) => void;
+}) {
   const [hoverKey, setHoverKey] = useState<string | null>(null);
   const [pos, setPos] = useState<{ x: number; y: number; w: number } | null>(null);
 
@@ -283,7 +287,7 @@ export function JourneyTreemap({ journeys }: { journeys: Journey[] }) {
                 boxShadow: hoverKey === j.key ? "inset 0 0 0 2px rgba(255,255,255,0.9)" : "none",
               }}
               onMouseEnter={() => setHoverKey(j.key)}
-              onClick={() => open({ context: "Behavioral Flow", department: j.steps[0].label })}
+              onClick={() => onFocus?.(j.key)}
             >
               {showPath ? (
                 <span className="line-clamp-3 text-[11px] font-medium leading-tight opacity-95">
@@ -337,14 +341,15 @@ export function JourneyTreemap({ journeys }: { journeys: Journey[] }) {
               </div>
             </dl>
             <p className="mt-1.5 border-t border-neutral-150 pt-1.5 text-[11px] font-medium text-primary-600">
-              Click to take action →
+              Click to find it in the table above →
             </p>
           </div>
         ) : null}
       </div>
       <p className="mt-2.5 text-[11px] leading-4 text-neutral-600">
         The biggest blocks are where most of your customers are; the red ones are the journeys
-        leaking value. Hover for the detail, or click a block to take action on it.
+        leaking value. Hover for the detail, or click a block to jump to its row and recommended
+        action in the table above.
       </p>
     </Card>
   );
@@ -435,10 +440,17 @@ function Select({
 
 /* ---------------------------- module ----------------------------- */
 
-export default function JourneysModule({ journeys }: { journeys: Journey[] }) {
+export default function JourneysModule({
+  journeys,
+  focus,
+}: {
+  journeys: Journey[];
+  focus?: { key: string; n: number } | null;
+}) {
   const [preset, setPreset] = useState<Preset>("all");
   const [metric, setMetric] = useState<Metric>("customers");
   const [sort, setSort] = useState<SortBy>("biggest");
+  const [highlightKey, setHighlightKey] = useState<string | null>(null);
 
   const rows = useMemo(() => {
     let list = journeys;
@@ -459,6 +471,32 @@ export default function JourneysModule({ journeys }: { journeys: Journey[] }) {
 
   const { slice, page, setPage, total, pageSize } = usePaged(rows, 6);
   const activeHint = PRESETS.find((p) => p.id === preset)?.hint ?? "";
+
+  // A treemap click asks this table to surface a specific journey: switch to a
+  // view that contains every journey, page to it, highlight it, and scroll it in.
+  useEffect(() => {
+    if (!focus) return;
+    setPreset("all");
+    setSort("biggest");
+    setMetric("customers");
+    const ordered = [...journeys].sort((a, b) => b.customers - a.customers);
+    const idx = ordered.findIndex((j) => j.key === focus.key);
+    setPage(idx >= 0 ? Math.floor(idx / pageSize) : 0);
+    setHighlightKey(focus.key);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Let the new page render before scrolling to the row.
+    const t1 = window.setTimeout(() => {
+      document
+        .getElementById(`jrow-${focus.key}`)
+        ?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+    }, 70);
+    const t2 = window.setTimeout(() => setHighlightKey(null), 3000);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus?.n]);
 
   return (
     <Card id="flow-journeys">
@@ -512,8 +550,9 @@ export default function JourneysModule({ journeys }: { journeys: Journey[] }) {
 
       <p className="mt-2 text-xs text-neutral-600">{activeHint}</p>
 
-      {/* Column labels, so the two numbers on each row are unambiguous. */}
-      <div className="mt-3 hidden items-center gap-x-4 border-b border-neutral-200 pb-1.5 text-[11px] font-medium text-neutral-500 sm:flex">
+      {/* Column labels, so the two numbers on each row are unambiguous. The px-2
+          matches the rows below, which carry it for the highlight inset. */}
+      <div className="mt-3 hidden items-center gap-x-4 border-b border-neutral-200 px-2 pb-1.5 text-[11px] font-medium text-neutral-500 sm:flex">
         <span className="w-5 shrink-0" />
         <span className="min-w-[240px] flex-1">Journey</span>
         <span className="w-16 shrink-0 text-right">Customers</span>
@@ -526,7 +565,13 @@ export default function JourneysModule({ journeys }: { journeys: Journey[] }) {
           const read = readJourney(j);
           const material = Math.abs(j.delta) >= ALERT_AT;
           return (
-            <li key={j.key} className="border-b border-primary-50 py-3 last:border-b-0">
+            <li
+              key={j.key}
+              id={`jrow-${j.key}`}
+              className={`scroll-mt-24 rounded-md border-b border-primary-50 px-2 py-3 transition-colors last:border-b-0 ${
+                highlightKey === j.key ? "bg-primary-50 ring-1 ring-primary-200" : ""
+              }`}
+            >
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
                 <span className="w-5 shrink-0 text-xs font-semibold text-neutral-400">
                   {page * pageSize + i + 1}
