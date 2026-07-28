@@ -182,14 +182,17 @@ function ArrowRight() {
   );
 }
 
-function SeeData({ label = "See the data", onClick }: { label?: string; onClick: () => void }) {
+/** The one navigation verb across the page: it always means "go to the
+    supporting data," and it names where that is so the label describes its
+    destination. The only other verb is Take action, which starts the action. */
+function ViewIn({ tab, onClick }: { tab: string; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-medium text-primary-600 transition-colors hover:text-primary-700"
     >
-      {label}
+      View in {tab}
       <ArrowRight />
     </button>
   );
@@ -348,7 +351,7 @@ function Connections({ onGo }: { onGo: (tab: string, anchor: string) => void }) 
               ))}
             </dl>
             <div className="mt-auto pt-1">
-              <SeeData label="See the evidence" onClick={() => onGo(c.tab, c.anchor)} />
+              <ViewIn tab={c.tab} onClick={() => onGo(c.tab, c.anchor)} />
             </div>
           </Card>
         ))}
@@ -405,7 +408,7 @@ function LeverTable({ onGo }: { onGo: (tab: string, anchor: string) => void }) {
                   </span>
                 </td>
                 <td className="whitespace-nowrap py-2.5 pl-3 text-right">
-                  <SeeData label="Open" onClick={() => onGo(l.tab, l.anchor)} />
+                  <ViewIn tab={l.tab} onClick={() => onGo(l.tab, l.anchor)} />
                 </td>
               </tr>
             ))}
@@ -446,7 +449,7 @@ function AtRisk({ onGo }: { onGo: (tab: string, anchor: string) => void }) {
         </table>
       </div>
       <div className="mt-3">
-        <SeeData label="Open segments" onClick={() => onGo("Segments", "segments-impact")} />
+        <ViewIn tab="Segments" onClick={() => onGo("Segments", "segments-impact")} />
       </div>
     </Card>
   );
@@ -482,7 +485,7 @@ function SuggestedActions({ onGo }: { onGo: (tab: string, anchor: string) => voi
               >
                 {a.impact}
               </span>
-              <SeeData label="Why this?" onClick={() => onGo(a.tab, a.anchor)} />
+              <ViewIn tab={a.tab} onClick={() => onGo(a.tab, a.anchor)} />
               <TakeAction context={a.context} department={a.department} />
             </div>
           </li>

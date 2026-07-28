@@ -26,6 +26,19 @@ import OverviewTab from "./OverviewTab";
 const TABS = ["Overview", "Bracketing", "Exchange", "Segments", "Behavioral Flow"] as const;
 type Tab = (typeof TABS)[number];
 
+// The tab lives in the URL (?tab=bracketing) so a view can be bookmarked, deep
+// linked, and — the point — forwarded to someone else.
+const TAB_SLUG: Record<Tab, string> = {
+  Overview: "overview",
+  Bracketing: "bracketing",
+  Exchange: "exchange",
+  Segments: "segments",
+  "Behavioral Flow": "behavioral-flow",
+};
+const SLUG_TAB: Record<string, Tab> = Object.fromEntries(
+  (Object.entries(TAB_SLUG) as [Tab, string][]).map(([t, s]) => [s, t]),
+);
+
 // Overview folds its AI summary into OverviewTab's own panel, so it has no
 // standalone insight here — hence insight is optional.
 const TAB_META: Record<Tab, { description: string; insight?: React.ReactNode }> = {
@@ -313,6 +326,38 @@ function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
         })}
       </div>
     </div>
+  );
+}
+
+/** Copies the current URL — which now carries the tab — so a view can be
+    forwarded to someone else. */
+function CopyLinkButton() {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 1600);
+        } catch {
+          /* clipboard blocked — nothing to do */
+        }
+      }}
+      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-0 px-2.5 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100"
+    >
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+          d="M9 15l6-6M11 6l.8-.9a3.5 3.5 0 015 5l-2 2M13 18l-.8.9a3.5 3.5 0 01-5-5l2-2"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      {copied ? "Link copied" : "Copy link"}
+    </button>
   );
 }
 
@@ -626,6 +671,13 @@ export default function CustomerContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Open on the tab named in the URL. Done in an effect, not the initial state,
+  // so server and first client render agree (they both start on Overview).
+  useEffect(() => {
+    const slug = new URLSearchParams(window.location.search).get("tab");
+    if (slug && SLUG_TAB[slug]) setTab(SLUG_TAB[slug]);
+  }, []);
+
   // Picking a tab by hand is a fresh intent, so the return offer no longer applies.
   const pickTab = (t: Tab) => {
     drilledFrom.current = null;
@@ -638,6 +690,10 @@ export default function CustomerContent() {
     // scroll happens directly rather than inside requestAnimationFrame — rAF is
     // paused on a hidden page, which would silently drop it.
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Keep the URL in step with the tab, preserving any history state (e.g. the
+    // drill marker) so Back still works.
+    window.history.replaceState(window.history.state, "", `?tab=${TAB_SLUG[tab]}`);
 
     // Coming back: restore the exact scroll position they left from.
     if (pendingScroll.current != null) {
@@ -667,7 +723,12 @@ export default function CustomerContent() {
         <Header />
         <div className="flex flex-col gap-5 px-4 pb-24 pt-3.5">
           <FilterBar tab={tab} />
-          <TabBar tab={tab} onChange={pickTab} />
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <TabBar tab={tab} onChange={pickTab} />
+            </div>
+            <CopyLinkButton />
+          </div>
           {/* Bracketing and Exchange render their own insight box with the KPI
               strip folded in, so they are skipped here to avoid a second one.
               The rest fold the description into the box; Overview keeps a plain
