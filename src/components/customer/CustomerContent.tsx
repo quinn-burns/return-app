@@ -20,7 +20,7 @@ import {
 import ExchangeTab from "./ExchangeTab";
 import SegmentsTab from "./SegmentsTab";
 import BehavioralFlowTab from "./BehavioralFlowTab";
-import BriefingTab from "./BriefingTab";
+import OverviewTab from "./OverviewTab";
 import BracketingTab from "./BracketingTab";
 
 /* ----------------------------- data ----------------------------- */
@@ -28,12 +28,12 @@ import BracketingTab from "./BracketingTab";
 // TABS / TAB_SLUG / SLUG_TAB / Tab now live in ./tabs so the server page and this
 // client component share one slug source. The tab itself lives in the URL.
 
-// Briefing folds its AI summary into BriefingTab's own panel, so it has no
+// Overview folds its AI summary into OverviewTab's own panel, so it has no
 // standalone insight here — hence insight is optional.
 const TAB_META: Record<Tab, { description: string; insight?: React.ReactNode }> = {
-  Briefing: {
+  Overview: {
     description:
-      "What only shows up across areas, and what has moved — synthesized, not recapped.",
+      "Everything the other four tabs conclude, totalled and ranked in one place — including the findings that only appear when two areas are read together.",
   },
   Bracketing: {
     description:
@@ -218,7 +218,7 @@ export default function CustomerContent({ initialTab }: { initialTab: Tab }) {
     navigate(t);
   };
 
-  // Drill from Briefing: navigate to the tab, remember where to return, and stash
+  // Drill from Overview: navigate to the tab, remember where to return, and stash
   // the card to scroll to and flash once the new panel renders.
   const go = (next: string, anchor?: string) => {
     overviewScroll.current = window.scrollY;
@@ -274,7 +274,7 @@ export default function CustomerContent({ initialTab }: { initialTab: Tab }) {
           {/* Bracketing and Exchange render their own insight box with the KPI
               strip folded in, so they are skipped here to avoid a second one.
               The rest fold the description into the box; Overview keeps a plain
-              line since its AI section lives in BriefingTab. */}
+              line since its AI section lives in OverviewTab. */}
           {tab === "Bracketing" || tab === "Exchange" ? null : TAB_META[tab].insight ? (
             <AiInsight title={`${tab} Insights`} subtitle={TAB_META[tab].description}>
               {TAB_META[tab].insight}
@@ -282,8 +282,8 @@ export default function CustomerContent({ initialTab }: { initialTab: Tab }) {
           ) : (
             <p className="-mt-1 text-sm text-neutral-600">{TAB_META[tab].description}</p>
           )}
-          {tab === "Briefing" ? (
-            <BriefingTab onGo={go} />
+          {tab === "Overview" ? (
+            <OverviewTab onGo={go} />
           ) : tab === "Bracketing" ? (
             <BracketingTab
               insight={TAB_META.Bracketing.insight}
