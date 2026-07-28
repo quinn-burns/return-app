@@ -4,22 +4,26 @@
  * content (to read and write the active tab), so slug literals live in one place.
  */
 
-export const TABS = ["Overview", "Bracketing", "Exchange", "Segments", "Behavioral Flow"] as const;
+// "Briefing", not "Overview" — the global sidebar nav already has an Overview,
+// and this tab is a worklist/synthesis rather than a mirror of that page.
+export const TABS = ["Briefing", "Bracketing", "Exchange", "Segments", "Behavioral Flow"] as const;
 export type Tab = (typeof TABS)[number];
 
 export const TAB_SLUG: Record<Tab, string> = {
-  Overview: "overview",
+  Briefing: "briefing",
   Bracketing: "bracketing",
   Exchange: "exchange",
   Segments: "segments",
   "Behavioral Flow": "behavioral-flow",
 };
 
-export const SLUG_TAB: Record<string, Tab> = Object.fromEntries(
-  (Object.entries(TAB_SLUG) as [Tab, string][]).map(([t, s]) => [s, t]),
-);
+export const SLUG_TAB: Record<string, Tab> = {
+  ...Object.fromEntries((Object.entries(TAB_SLUG) as [Tab, string][]).map(([t, s]) => [s, t])),
+  // Legacy alias: old ?tab=overview links still resolve to Briefing.
+  overview: "Briefing",
+};
 
-/** Validate a raw ?tab value against the allowlist; anything unknown → Overview. */
+/** Validate a raw ?tab value against the allowlist; anything unknown → Briefing. */
 export function resolveTab(slug?: string | string[] | null): Tab {
-  return typeof slug === "string" && SLUG_TAB[slug] ? SLUG_TAB[slug] : "Overview";
+  return typeof slug === "string" && SLUG_TAB[slug] ? SLUG_TAB[slug] : "Briefing";
 }

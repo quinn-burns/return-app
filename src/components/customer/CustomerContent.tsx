@@ -20,7 +20,7 @@ import {
 import ExchangeTab from "./ExchangeTab";
 import SegmentsTab from "./SegmentsTab";
 import BehavioralFlowTab from "./BehavioralFlowTab";
-import OverviewTab from "./OverviewTab";
+import BriefingTab from "./BriefingTab";
 import BracketingTab from "./BracketingTab";
 
 /* ----------------------------- data ----------------------------- */
@@ -28,12 +28,12 @@ import BracketingTab from "./BracketingTab";
 // TABS / TAB_SLUG / SLUG_TAB / Tab now live in ./tabs so the server page and this
 // client component share one slug source. The tab itself lives in the URL.
 
-// Overview folds its AI summary into OverviewTab's own panel, so it has no
+// Briefing folds its AI summary into BriefingTab's own panel, so it has no
 // standalone insight here — hence insight is optional.
 const TAB_META: Record<Tab, { description: string; insight?: React.ReactNode }> = {
-  Overview: {
+  Briefing: {
     description:
-      "Everything the other four tabs conclude, totalled and ranked in one place — including the findings that only appear when two areas are read together.",
+      "Everything the other four tabs conclude, ranked into one worklist — plus the findings that only appear when two areas are read together.",
   },
   Bracketing: {
     description:
@@ -218,7 +218,7 @@ export default function CustomerContent({ initialTab }: { initialTab: Tab }) {
     navigate(t);
   };
 
-  // Drill from Overview: navigate to the tab, remember where to return, and stash
+  // Drill from Briefing: navigate to the tab, remember where to return, and stash
   // the card to scroll to and flash once the new panel renders.
   const go = (next: string, anchor?: string) => {
     overviewScroll.current = window.scrollY;
@@ -229,7 +229,7 @@ export default function CustomerContent({ initialTab }: { initialTab: Tab }) {
 
   // Back button and the pill are the same thing now: step back in history, which
   // the router turns into the previous ?tab.
-  const backToOverview = () => router.back();
+  const backToBriefing = () => router.back();
 
   // One effect drives both directions of a drill, keyed on the URL-derived tab:
   // landing back where a drill started restores the scroll; landing on the target
@@ -274,7 +274,7 @@ export default function CustomerContent({ initialTab }: { initialTab: Tab }) {
           {/* Bracketing and Exchange render their own insight box with the KPI
               strip folded in, so they are skipped here to avoid a second one.
               The rest fold the description into the box; Overview keeps a plain
-              line since its AI section lives in OverviewTab. */}
+              line since its AI section lives in BriefingTab. */}
           {tab === "Bracketing" || tab === "Exchange" ? null : TAB_META[tab].insight ? (
             <AiInsight title={`${tab} Insights`} subtitle={TAB_META[tab].description}>
               {TAB_META[tab].insight}
@@ -282,8 +282,8 @@ export default function CustomerContent({ initialTab }: { initialTab: Tab }) {
           ) : (
             <p className="-mt-1 text-sm text-neutral-600">{TAB_META[tab].description}</p>
           )}
-          {tab === "Overview" ? (
-            <OverviewTab onGo={go} />
+          {tab === "Briefing" ? (
+            <BriefingTab onGo={go} />
           ) : tab === "Bracketing" ? (
             <BracketingTab
               insight={TAB_META.Bracketing.insight}
@@ -304,7 +304,7 @@ export default function CustomerContent({ initialTab }: { initialTab: Tab }) {
       {returnFrom && tab !== returnFrom ? (
         <button
           type="button"
-          onClick={backToOverview}
+          onClick={backToBriefing}
           className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-0 py-2 pl-3 pr-4 text-sm font-medium text-neutral-800 shadow-lg transition-colors hover:bg-neutral-50"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -316,7 +316,7 @@ export default function CustomerContent({ initialTab }: { initialTab: Tab }) {
               strokeLinejoin="round"
             />
           </svg>
-          Back to overview
+          Back to Briefing
         </button>
       ) : null}
     </ActionModalProvider>
