@@ -161,38 +161,6 @@ function TabBar({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
   );
 }
 
-/** Copies the current URL — which now carries the tab — so a view can be
-    forwarded to someone else. */
-function CopyLinkButton() {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={async () => {
-        try {
-          await navigator.clipboard.writeText(window.location.href);
-          setCopied(true);
-          window.setTimeout(() => setCopied(false), 1600);
-        } catch {
-          /* clipboard blocked — nothing to do */
-        }
-      }}
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-0 px-2.5 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100"
-    >
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path
-          d="M9 15l6-6M11 6l.8-.9a3.5 3.5 0 015 5l-2 2M13 18l-.8.9a3.5 3.5 0 01-5-5l2-2"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-      {copied ? "Link copied" : "Copy link"}
-    </button>
-  );
-}
-
 /* ----------------------------- page ------------------------------ */
 
 export default function CustomerContent({ initialTab }: { initialTab: Tab }) {
@@ -265,12 +233,7 @@ export default function CustomerContent({ initialTab }: { initialTab: Tab }) {
         <Header />
         <div className="flex flex-col gap-5 px-4 pb-24 pt-3.5">
           <FilterBar tab={tab} />
-          <div className="flex items-end justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <TabBar tab={tab} onChange={selectTab} />
-            </div>
-            <CopyLinkButton />
-          </div>
+          <TabBar tab={tab} onChange={selectTab} />
           {/* Bracketing and Exchange render their own insight box with the KPI
               strip folded in, so they are skipped here to avoid a second one.
               The rest fold the description into the box; Overview keeps a plain

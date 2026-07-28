@@ -208,12 +208,13 @@ function OpportunityBar({ onGo }: { onGo: (tab: string, anchor: string) => void 
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/overview/ai-logo.svg" alt="" className="size-[17px]" />
         </span>
-        <h2 className="text-xl font-semibold text-primary-700">Briefing</h2>
+        <h2 className="text-xl font-semibold text-primary-700">Briefing Insights</h2>
       </div>
       <p className="mt-1.5 text-sm leading-relaxed text-neutral-700">
-        Color bracketing recovers the most and retains best; size{" "}
-        <InfoTip label="What is bracketing?" text={BRACKETING_DEF} /> bracketing, its mirror, leaks
-        the most — so treat them as one decision, and scope any size-guidance rollout to size only.
+        Color bracketing{" "}
+        <InfoTip label="What is bracketing?" text={BRACKETING_DEF} /> recovers the most and retains
+        best; size bracketing, its mirror, leaks the most — so treat them as one decision, and scope
+        any size-guidance rollout to size only.
       </p>
 
       <div className="mt-4 flex flex-col gap-3">
