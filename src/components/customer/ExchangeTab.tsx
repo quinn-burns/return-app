@@ -339,13 +339,11 @@ export default function ExchangeTab({
 }) {
   return (
     <>
-      <AiInsight
-        title="Exchange Insights"
-        subtitle={description}
-        footer={<KpiStrip items={KPIS} cols={4} />}
-      >
+      <AiInsight title="Exchange Insights" subtitle={description}>
         {insight}
       </AiInsight>
+      {/* KPIs are metrics, not AI output, so they sit in their own box below. */}
+      <KpiStrip items={KPIS} cols={4} />
       {/* The three exchange charts share one row on a wide screen and stack below it. */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <ExchangeKind />

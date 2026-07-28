@@ -147,7 +147,7 @@ export function readJourney(j: Journey): Read {
       meaning: `Kept the whole order and came back${dept ? ` into ${dept}` : ""} — the pattern worth protecting.` + grew(false),
       action:
         bracket === "color"
-          ? "Allow colour bracketing to more of these customers"
+          ? "Allow color bracketing to more of these customers"
           : "Build a look-alike audience from this group",
     };
   }
@@ -212,7 +212,7 @@ const TONE_BG: Record<Read["tone"], string> = {
   bad: "#dc2828",
 };
 
-/** Journeys as a treemap: block size is customers, colour is whether the
+/** Journeys as a treemap: block size is customers, color is whether the
     outcome is good, worth watching, or costing you. Reads at a glance —
     biggest blocks are where your customers are, red is where they leak. */
 export function JourneyTreemap({ journeys }: { journeys: Journey[] }) {
@@ -232,7 +232,7 @@ export function JourneyTreemap({ journeys }: { journeys: Journey[] }) {
     <Card>
       <CardHeading
         title="Where your customers are"
-        subtitle="Each block is one complete journey. Its size is how many customers took it; its colour is whether that ending is good, worth watching, or costing you."
+        subtitle="Each block is one complete journey. Its size is how many customers took it; its color is whether that ending is good, worth watching, or costing you."
       />
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-neutral-600">
         {(
@@ -262,11 +262,10 @@ export function JourneyTreemap({ journeys }: { journeys: Journey[] }) {
         {laid.map(({ j, x, y, w, h }) => {
           const read = readJourney(j);
           // What each block says on its own, before any hover. Bigger blocks get
-          // the path and the money; the smallest get just a number.
-          const short = j.cameBack
-            ? `${j.steps[1].label} → ${j.steps[3].label}`
-            : `${j.steps[1].label}, gone`;
-          const showPath = w > 16 && h > 22;
+          // the whole journey written out and the money; the smallest get just a
+          // number, and rely on hover.
+          const fullPath = j.steps.map((s) => s.label).join(" → ");
+          const showPath = w > 15 && h > 20;
           const showValue = w > 13 && h > 30;
           const showCount = w > 8 && h > 11;
           return (
@@ -284,8 +283,8 @@ export function JourneyTreemap({ journeys }: { journeys: Journey[] }) {
               onMouseEnter={() => setHoverKey(j.key)}
             >
               {showPath ? (
-                <span className="line-clamp-2 text-[11px] font-medium leading-tight opacity-90">
-                  {short}
+                <span className="line-clamp-3 text-[11px] font-medium leading-tight opacity-95">
+                  {fullPath}
                 </span>
               ) : (
                 <span />

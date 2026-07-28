@@ -333,7 +333,7 @@ function SegmentSection({ segment }: { segment: Segment }) {
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead>
-            <tr className="border-b border-neutral-200 text-neutral-600">
+            <tr className="border-b border-neutral-200 text-[11px] text-neutral-600">
               <th className="whitespace-nowrap py-2 pr-3 font-normal">Customer ID</th>
               <th className="whitespace-nowrap px-3 py-2 text-right font-normal">Revenue</th>
               <th className="whitespace-nowrap px-3 py-2 text-right font-normal">Return Revenue</th>

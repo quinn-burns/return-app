@@ -9,8 +9,8 @@ import { Card, CardHeading, TakeAction } from "./parts";
    the arithmetic is noted beside it. */
 
 /* Recoverable = the opportunity columns of the four action tables, top
-   departments only. Bracketing: promote colour 48+39+24, promote size 18+17+15,
-   discourage size ~4.7. Exchange: promote size 15+11+6+6+3, promote colour
+   departments only. Bracketing: promote color 48+39+24, promote size 18+17+15,
+   discourage size ~4.7. Exchange: promote size 15+11+6+6+3, promote color
    6+5+2+2+1, guidance ~8.9. These are separate levers, so they add up. */
 const RECOVERABLE = [
   { area: "Bracketing", value: 166, display: "$166K", color: "#4169e1" },
@@ -38,10 +38,10 @@ type Link = {
 const CONNECTIONS: Link[] = [
   {
     title: "Size bracketing costs you the customer, not just the margin",
-    body: "Two in five size-bracketed orders come back in full, against one in fifty for colour. And customers who return everything are the least likely to ever buy again — so the damage outlives the order.",
+    body: "Two in five size-bracketed orders come back in full, against one in fifty for color. And customers who return everything are the least likely to ever buy again — so the damage outlives the order.",
     proof: [
       { label: "Size orders returned in full", value: "40%" },
-      { label: "Colour orders returned in full", value: "2%" },
+      { label: "Color orders returned in full", value: "2%" },
       { label: "Repurchase after returning all", value: "41%" },
       { label: "Repurchase after keeping all", value: "74%" },
     ],
@@ -51,11 +51,11 @@ const CONNECTIONS: Link[] = [
     tone: "bad",
   },
   {
-    title: "Colour bracketing is a retention engine you are under-using",
-    body: "Nine in ten colour-bracketed orders are kept in full, and those customers come back at the highest rate you record. It earns margin on the order and buys the next one — and it is your single largest untapped lever.",
+    title: "Color bracketing is a retention engine you are under-using",
+    body: "Nine in ten color-bracketed orders are kept in full, and those customers come back at the highest rate you record. It earns margin on the order and buys the next one — and it is your single largest untapped lever.",
     proof: [
-      { label: "Colour orders kept in full", value: "90%" },
-      { label: "Profit per colour-bracketed order", value: "+$44" },
+      { label: "Color orders kept in full", value: "90%" },
+      { label: "Profit per color-bracketed order", value: "+$44" },
       { label: "Repurchase after keeping all", value: "74%" },
       { label: "Identified opportunity", value: "$111K" },
     ],
@@ -91,11 +91,11 @@ type Lever = {
   anchor: string;
 };
 const LEVERS: Lever[] = [
-  { lever: "Allow colour bracketing", area: "Bracketing", value: "$111K", amount: 111, effort: "Low", tab: "Bracketing", anchor: "bracketing-promote-color" },
+  { lever: "Allow color bracketing", area: "Bracketing", value: "$111K", amount: 111, effort: "Low", tab: "Bracketing", anchor: "bracketing-promote-color" },
   { lever: "Allow size bracketing where it pays", area: "Bracketing", value: "$50K", amount: 50, effort: "Low", tab: "Bracketing", anchor: "bracketing-promote-size" },
   { lever: "Promote size exchanges", area: "Exchange", value: "$41K", amount: 41, effort: "Medium", tab: "Exchange", anchor: "exchange-promote" },
-  { lever: "Promote colour exchanges", area: "Exchange", value: "$16K", amount: 16, effort: "Medium", tab: "Exchange", anchor: "exchange-promote-color" },
-  { lever: "Improve colour guidance", area: "Exchange", value: "$6.5K", amount: 6.5, effort: "Medium", tab: "Exchange", anchor: "exchange-promote-color" },
+  { lever: "Promote color exchanges", area: "Exchange", value: "$16K", amount: 16, effort: "Medium", tab: "Exchange", anchor: "exchange-promote-color" },
+  { lever: "Improve color guidance", area: "Exchange", value: "$6.5K", amount: 6.5, effort: "Medium", tab: "Exchange", anchor: "exchange-promote-color" },
   { lever: "Discourage size bracketing where it loses", area: "Bracketing", value: "$4.7K", amount: 4.7, effort: "Low", tab: "Bracketing", anchor: "bracketing-profit" },
   { lever: "Improve size guidance", area: "Exchange", value: "$2.4K", amount: 2.4, effort: "Medium", tab: "Exchange", anchor: "exchange-promote" },
 ];
@@ -121,7 +121,7 @@ type Action = {
 };
 const ACTIONS: Action[] = [
   {
-    title: "Allow colour bracketing in Running, Casual and Light Hike",
+    title: "Allow color bracketing in Running, Casual and Light Hike",
     why: "Your biggest single opportunity, and the outcome it produces — keeping the whole order — is also the one that predicts a repeat purchase.",
     impact: "$111K",
     weight: "High",
@@ -213,7 +213,7 @@ function OpportunityBar({ onGo }: { onGo: (tab: string, anchor: string) => void 
       <p className="mt-1.5 text-sm leading-relaxed text-neutral-700">
         There is <span className="font-semibold text-neutral-800">$232K</span> identified across
         bracketing and exchange, and the largest single piece of it —{" "}
-        <span className="font-semibold text-neutral-800">$111K in colour bracketing</span> — is also
+        <span className="font-semibold text-neutral-800">$111K in color bracketing</span> — is also
         the lever that most improves retention, since 90% of those orders are kept in full and those
         customers come back at 74%. The mirror of it is size bracketing: 40% of those orders come
         back in full, and customers who return everything repurchase at just 41%.
@@ -233,7 +233,7 @@ function OpportunityBar({ onGo }: { onGo: (tab: string, anchor: string) => void 
               Three moves cover <span className="font-semibold text-neutral-0">$202K</span> of it:
               allow{" "}
               <span className="font-semibold text-neutral-0">
-                colour bracketing in Running and Casual
+                color bracketing in Running and Casual
               </span>
 , allow{" "}
               <span className="font-semibold text-neutral-0">
