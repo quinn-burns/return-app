@@ -116,9 +116,9 @@ const IMPROVE_COLOR_ALL = padGuide(IMPROVE_COLOR, 24);
 /* --------------------------- charts ------------------------------ */
 
 function ExchangeKind() {
-  // Size and Color are independent rates (they do not sum to 100), so show each
-  // as its own gauge rather than slices of one pie. Rings fill the card at a
-  // natural size and read as "X% of these returns were saved as an exchange".
+  // Size and Color are independent rates (they do not sum to 100), so two pie
+  // slices would misread. Independent bars — each the share of that return type
+  // saved as a same-style exchange — are the honest, legible choice.
   return (
     <Card>
       <div className="flex h-full flex-col">
@@ -126,16 +126,20 @@ function ExchangeKind() {
           title="Of exchanges, what kind?"
           subtitle="Size = swap to a different size. Color = swap to a different color."
         />
-        <div className="flex flex-1 flex-wrap items-center justify-center gap-8 py-4">
+        <div className="flex flex-1 flex-col justify-center gap-3 py-4">
           {KIND.map((t) => (
-            <div key={t.label} className="flex flex-col items-center gap-2">
-              <Donut
-                segments={[{ label: t.label, pct: t.pct, color: t.color }]}
-                centerTop={`${t.pct}%`}
-                centerBottom="exchanged"
-                size={124}
-              />
-              <span className="text-sm font-medium text-neutral-800">{t.label}</span>
+            <div key={t.label} className="flex items-center gap-3">
+              <span className="w-14 shrink-0 text-sm font-medium text-neutral-800">{t.label}</span>
+              <div className="h-5 min-w-0 flex-1 overflow-hidden rounded-[4px] bg-neutral-100">
+                <div
+                  data-anim-bar
+                  className="h-5 rounded-[4px]"
+                  style={{ width: `${t.pct}%`, backgroundColor: t.color }}
+                />
+              </div>
+              <span className="w-12 shrink-0 text-right text-sm font-semibold text-neutral-800">
+                {t.pct}%
+              </span>
             </div>
           ))}
         </div>

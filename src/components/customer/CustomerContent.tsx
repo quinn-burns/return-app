@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ActionModalProvider } from "./ActionSubmit";
-import { AiInsight, Pagination, TakeAction, usePaged, useReveal } from "./parts";
+import { AiInsight, Donut, Pagination, TakeAction, usePaged, useReveal } from "./parts";
 import { FILLER_DEPTS, countStr, money, pctStr, seeded } from "./filler";
 import {
   BRAND_OPTS,
@@ -331,9 +331,14 @@ function KpiRow() {
 }
 
 function TypeBreakdown() {
-  // Shares overlap (an order can bracket on both), so they don't sum to a whole —
-  // which is exactly why a pie/donut misleads here. Independent bars, each the
-  // true share of bracketed orders involving that dimension, are honest.
+  // Shares overlap (an order can bracket on both), so normalize for the ring
+  // while the legend keeps the true per-dimension percentages.
+  const total = TYPE_BREAKDOWN.reduce((s, t) => s + t.pct, 0);
+  const arcs = TYPE_BREAKDOWN.map((t) => ({
+    label: t.label,
+    pct: (t.pct / total) * 100,
+    color: t.color,
+  }));
   return (
     <Card>
       <div className="flex h-full flex-col">
@@ -341,26 +346,22 @@ function TypeBreakdown() {
           title="What kind of bracketing?"
           subtitle="Size = same style, different sizes. Color = same style, different colors."
         />
-        <p className="mt-4 text-sm text-neutral-700">
-          <span className="text-lg font-bold text-neutral-800">{BRACKETED_TOTAL}</span> bracketed
-          orders
-        </p>
-        <div className="flex flex-1 flex-col justify-center gap-3 py-4">
-          {TYPE_BREAKDOWN.map((t) => (
-            <div key={t.label} className="flex items-center gap-3">
-              <span className="w-14 shrink-0 text-sm font-medium text-neutral-800">{t.label}</span>
-              <div className="h-5 min-w-0 flex-1 overflow-hidden rounded-[4px] bg-neutral-100">
-                <div
-                  data-anim-bar
-                  className="h-5 rounded-[4px]"
-                  style={{ width: `${t.pct}%`, backgroundColor: t.color }}
+        <div className="flex flex-1 flex-col items-center justify-center gap-5 py-4 sm:flex-row">
+          <Donut segments={arcs} centerTop={BRACKETED_TOTAL} centerBottom="orders" />
+          <ul className="flex min-w-0 flex-1 flex-col gap-2">
+            {TYPE_BREAKDOWN.map((t) => (
+              <li key={t.label} className="flex items-center gap-2 text-sm">
+                <span
+                  className="size-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: t.color }}
                 />
-              </div>
-              <span className="w-24 shrink-0 text-right text-xs text-neutral-600">
-                <span className="text-sm font-semibold text-neutral-800">{t.pct}%</span> · {t.orders}
-              </span>
-            </div>
-          ))}
+                <span className="font-medium text-neutral-800">{t.label}</span>
+                <span className="text-neutral-600">
+                  — {t.pct}% · {t.orders} orders
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
         <p className="text-[11px] leading-4 text-neutral-600">
           Orders can be bracketed on both size and color, so shares add to more than 100%.
@@ -490,7 +491,7 @@ function ActionTable({
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-neutral-200 text-[11px] text-neutral-600">
+            <tr className="border-b border-neutral-200 text-[11px] text-neutral-600 [text-wrap:balance]">
               <th className="py-2 pr-1.5 align-bottom font-normal leading-tight">Department</th>
               <th className="px-1.5 py-2 text-right align-bottom font-normal leading-tight">Revenue</th>
               <th className="px-1.5 py-2 text-right align-bottom font-normal leading-tight">{pctLabel}</th>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useActionModal } from "./ActionSubmit";
 import { Card, CardHeading, Pagination, TakeAction, usePaged } from "./parts";
 import { seeded } from "./filler";
 
@@ -216,6 +217,7 @@ const TONE_BG: Record<Read["tone"], string> = {
     outcome is good, worth watching, or costing you. Reads at a glance —
     biggest blocks are where your customers are, red is where they leak. */
 export function JourneyTreemap({ journeys }: { journeys: Journey[] }) {
+  const { open } = useActionModal();
   const [hoverKey, setHoverKey] = useState<string | null>(null);
   const [pos, setPos] = useState<{ x: number; y: number; w: number } | null>(null);
 
@@ -271,7 +273,7 @@ export function JourneyTreemap({ journeys }: { journeys: Journey[] }) {
           return (
             <div
               key={j.key}
-              className="absolute flex cursor-default flex-col justify-between gap-1 overflow-hidden rounded-[3px] p-2 text-neutral-0 ring-inset transition-[box-shadow]"
+              className="absolute flex cursor-pointer flex-col justify-between gap-1 overflow-hidden rounded-[3px] p-2 text-neutral-0 ring-inset transition-[box-shadow]"
               style={{
                 left: `${x}%`,
                 top: `${y}%`,
@@ -281,6 +283,7 @@ export function JourneyTreemap({ journeys }: { journeys: Journey[] }) {
                 boxShadow: hoverKey === j.key ? "inset 0 0 0 2px rgba(255,255,255,0.9)" : "none",
               }}
               onMouseEnter={() => setHoverKey(j.key)}
+              onClick={() => open({ context: "Behavioral Flow", department: j.steps[0].label })}
             >
               {showPath ? (
                 <span className="line-clamp-3 text-[11px] font-medium leading-tight opacity-95">
@@ -333,12 +336,15 @@ export function JourneyTreemap({ journeys }: { journeys: Journey[] }) {
                 <dd className="font-semibold text-neutral-800">{fmtMoney(hovered.perCust)}</dd>
               </div>
             </dl>
+            <p className="mt-1.5 border-t border-neutral-150 pt-1.5 text-[11px] font-medium text-primary-600">
+              Click to take action →
+            </p>
           </div>
         ) : null}
       </div>
       <p className="mt-2.5 text-[11px] leading-4 text-neutral-600">
         The biggest blocks are where most of your customers are; the red ones are the journeys
-        leaking value. Hover any block for its full path and value.
+        leaking value. Hover for the detail, or click a block to take action on it.
       </p>
     </Card>
   );
