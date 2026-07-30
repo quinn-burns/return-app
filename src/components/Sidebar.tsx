@@ -20,8 +20,7 @@ const MAIN_ITEMS: NavItem[] = [
   { label: "Customers", icon: "customer", href: "/customer" },
   { label: "Data Explorer", icon: "database", href: "/data-explorer" },
   { label: "Reports", icon: "assignment", href: "/reports" },
-  // Sustainability route still exists at /sustainability — hidden from the nav for now.
-  // { label: "Sustainability", icon: "sustainability", href: "/sustainability" },
+  { label: "Sustainability", icon: "sustainability", href: "/sustainability" },
 ];
 
 const UTILITY_ITEMS: NavItem[] = [
