@@ -74,7 +74,7 @@ const TAB_META: Record<Tab, { description: string; insight?: React.ReactNode }> 
       </>
     ),
   },
-  "Behavioral Flow": {
+  "Customer Journey": {
     description:
       "The full journey from how customers bracket, through what they keep, to whether they come back and what they buy next.",
     insight: (
@@ -110,7 +110,7 @@ function FilterBar({ tab }: { tab: Tab }) {
         <FilterSelect label="Brand" options={BRAND_OPTS} />
         <FilterSelect label="Country" options={COUNTRY_OPTS} />
         <FilterSelect label="Product Category" options={CATEGORY_OPTS} />
-        {tab === "Behavioral Flow" ? (
+        {tab === "Customer Journey" ? (
           <>
             <FilterSelect label="Customer Type" options={CUSTOMER_TYPE_OPTS} />
             <FilterSelect label="1st Purchase Department" options={DEPARTMENT_OPTS} />

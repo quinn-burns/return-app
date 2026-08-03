@@ -6,7 +6,7 @@
 
 // "Briefing", not "Overview" — the global sidebar nav already has an Overview,
 // and this tab is a worklist/synthesis rather than a mirror of that page.
-export const TABS = ["Briefing", "Bracketing", "Exchange", "Segments", "Behavioral Flow"] as const;
+export const TABS = ["Briefing", "Bracketing", "Exchange", "Segments", "Customer Journey"] as const;
 export type Tab = (typeof TABS)[number];
 
 export const TAB_SLUG: Record<Tab, string> = {
@@ -14,13 +14,14 @@ export const TAB_SLUG: Record<Tab, string> = {
   Bracketing: "bracketing",
   Exchange: "exchange",
   Segments: "segments",
-  "Behavioral Flow": "behavioral-flow",
+  "Customer Journey": "customer-journey",
 };
 
 export const SLUG_TAB: Record<string, Tab> = {
   ...Object.fromEntries((Object.entries(TAB_SLUG) as [Tab, string][]).map(([t, s]) => [s, t])),
-  // Legacy alias: old ?tab=overview links still resolve to Briefing.
+  // Legacy aliases: old links still resolve to the renamed tabs.
   overview: "Briefing",
+  "behavioral-flow": "Customer Journey",
 };
 
 /** Validate a raw ?tab value against the allowlist; anything unknown → Briefing. */

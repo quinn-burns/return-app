@@ -11,12 +11,6 @@ const RECOVERABLE = [
 ];
 const RECOVERABLE_TOTAL = "$232K";
 
-const TRENDS = [
-  { label: "Return rate", value: "14.76%", note: "↓ 2.0 pts", good: true },
-  { label: "Returns from bracketing", value: "30.84%", note: "↓ 0.9 pts", good: true },
-  { label: "Returns recovered as exchanges", value: "4.4%", note: "no movement", good: false },
-];
-
 /* --- Conclusions that need two tabs to see. --- */
 type Link = {
   title: string;
@@ -37,8 +31,8 @@ const CONNECTIONS: Link[] = [
       { label: "Repurchase after returning all", value: "41%" },
       { label: "Repurchase after keeping all", value: "74%" },
     ],
-    from: ["Bracketing", "Behavioral Flow"],
-    tab: "Behavioral Flow",
+    from: ["Bracketing", "Customer Journey"],
+    tab: "Customer Journey",
     anchor: "flow-journeys",
     tone: "bad",
   },
@@ -51,7 +45,7 @@ const CONNECTIONS: Link[] = [
       { label: "Repurchase after keeping all", value: "74%" },
       { label: "Identified opportunity", value: "$111K" },
     ],
-    from: ["Bracketing", "Behavioral Flow"],
+    from: ["Bracketing", "Customer Journey"],
     tab: "Bracketing",
     anchor: "bracketing-promote-color",
     tone: "good",
@@ -65,7 +59,7 @@ const CONNECTIONS: Link[] = [
       { label: "Repurchase after keeping some", value: "58%" },
       { label: "Identified opportunity", value: "$57K" },
     ],
-    from: ["Exchange", "Behavioral Flow"],
+    from: ["Exchange", "Customer Journey"],
     tab: "Exchange",
     anchor: "exchange-promote",
     tone: "good",
@@ -275,21 +269,6 @@ function OpportunityBar({ onGo }: { onGo: (tab: string, anchor: string) => void 
             </div>
           </div>
         </section>
-
-        <div className="flex flex-wrap items-center gap-x-8 gap-y-2 rounded-lg border border-neutral-200 bg-neutral-0 px-4 py-2.5">
-          <span className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
-            How you are tracking
-          </span>
-          {TRENDS.map((t) => (
-            <span key={t.label} className="flex items-baseline gap-2 text-xs">
-              <span className="text-neutral-600">{t.label}</span>
-              <span className="text-sm font-bold text-neutral-800">{t.value}</span>
-              <span className={`font-medium ${t.good ? "text-success-600" : "text-warning-600"}`}>
-                {t.note}
-              </span>
-            </span>
-          ))}
-        </div>
       </div>
     </section>
   );
