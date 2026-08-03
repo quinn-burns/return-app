@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Card, CardHeading } from "./parts";
+import { Card, CardHeading, RecommendedActions, type RecItem } from "./parts";
 import JourneysModule, { buildJourneys, JourneyTreemap } from "./JourneysModule";
 
 /* ----------------------------- sankey ---------------------------- */
@@ -597,6 +597,12 @@ function SankeyFlow() {
   );
 }
 
+const JNY_RECS: RecItem[] = [
+  { label: "Win back one-and-done customers", tone: "good", impact: "$547K", context: "Customer Journey", department: "Kept-all cohort", why: "2,910 customers kept their whole order but never came back — a 30-day win-back reaches them before they lapse, the single biggest journey by value." },
+  { label: "Flag full returners at return time", tone: "warn", impact: "Retention", context: "Customer Journey", department: "Returned-all cohort", why: "Customers who return the entire order repurchase at just 41% — intervene at the return, not after they have churned." },
+  { label: "Build look-alikes from kept-all repeaters", tone: "good", impact: "Growth", context: "Customer Journey", department: "Kept-all repeaters", why: "Keep-all bracketed customers come back at 74% and drive the most downstream value — model new acquisition on this group." },
+];
+
 export default function BehavioralFlowTab() {
   // Clicking a treemap block sends its journey to the ranked table above, where
   // the row carries the recommended action. The counter makes each click a fresh
@@ -611,6 +617,7 @@ export default function BehavioralFlowTab() {
         onFocus={(key) => setFocus({ key, n: ++focusN.current })}
       />
       <JourneysModule journeys={JOURNEYS} focus={focus} />
+      <RecommendedActions context="Customer Journey" items={JNY_RECS} />
     </>
   );
 }
