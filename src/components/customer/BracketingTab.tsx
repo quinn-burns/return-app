@@ -40,76 +40,71 @@ const OUTCOME_LEGEND = [
   { label: "Returned all", color: "#dc2828" },
 ];
 
-type Row = {
+type Rec = "allowSize" | "discSize" | "sizeGuide" | "promoteColor" | "imgColor";
+const REC_META: Record<Rec, { label: string; tone: "good" | "warn" | "bad" }> = {
+  allowSize: { label: "Allow size bracketing", tone: "good" },
+  discSize: { label: "Discourage size bracketing", tone: "bad" },
+  sizeGuide: { label: "Improve size guidance", tone: "warn" },
+  promoteColor: { label: "Promote color bracketing", tone: "good" },
+  imgColor: { label: "Improve image color", tone: "warn" },
+};
+
+// One row per department, tagged with the recommendation its economics imply, so
+// a single Size table and a single Color table carry allow / discourage /
+// guidance together — the client's split — instead of four separate tables.
+type BrkRow = {
   dept: string;
   revenue: string;
   pct: string;
-  orders: string;
+  returned: string;
   delta: string;
+  positive: boolean;
+  rec: Rec;
   opportunity: string;
 };
 
-const PROMOTE_SIZE: Row[] = padRows(
-  [
-    { dept: "Steel Toe", revenue: "$8.0M", pct: "4.05%", orders: "4K", delta: "+$95", opportunity: "$18K" },
-    { dept: "Soft Toe", revenue: "$13.8M", pct: "6.47%", orders: "8K", delta: "+$54", opportunity: "$17K" },
-    { dept: "Composite Toe", revenue: "$12.1M", pct: "4.27%", orders: "4K", delta: "+$73", opportunity: "$15K" },
-  ],
-  28,
-  false,
-);
+const SIZE_BASE: BrkRow[] = [
+  { dept: "Steel Toe", revenue: "$8.0M", pct: "4.05%", returned: "9%", delta: "+$95", positive: true, rec: "allowSize", opportunity: "$18K" },
+  { dept: "Soft Toe", revenue: "$13.8M", pct: "6.47%", returned: "11%", delta: "+$54", positive: true, rec: "allowSize", opportunity: "$17K" },
+  { dept: "Composite Toe", revenue: "$12.1M", pct: "4.27%", returned: "8%", delta: "+$73", positive: true, rec: "allowSize", opportunity: "$15K" },
+  { dept: "Originals", revenue: "$3.3M", pct: "3.99%", returned: "31%", delta: "−$14", positive: false, rec: "sizeGuide", opportunity: "$692" },
+  { dept: "Light Hike", revenue: "$6.1M", pct: "4.87%", returned: "24%", delta: "−$22", positive: false, rec: "discSize", opportunity: "$2K" },
+  { dept: "Trail Running", revenue: "$1.3M", pct: "4.13%", returned: "27%", delta: "−$28", positive: false, rec: "discSize", opportunity: "$587" },
+];
+const COLOR_BASE: BrkRow[] = [
+  { dept: "Running", revenue: "$46.4M", pct: "3.63%", returned: "2%", delta: "+$88", positive: true, rec: "promoteColor", opportunity: "$48K" },
+  { dept: "Casual", revenue: "$28.0M", pct: "5.53%", returned: "3%", delta: "+$49", positive: true, rec: "promoteColor", opportunity: "$39K" },
+  { dept: "Light Hike", revenue: "$46.1M", pct: "3.38%", returned: "2%", delta: "+$40", positive: true, rec: "promoteColor", opportunity: "$24K" },
+  { dept: "Lowdown", revenue: "$182K", pct: "2.6%", returned: "14%", delta: "+$8", positive: true, rec: "imgColor", opportunity: "$5K" },
+  { dept: "Performance Tops", revenue: "$11K", pct: "1.9%", returned: "12%", delta: "+$12", positive: true, rec: "imgColor", opportunity: "$733" },
+];
 
-const PROMOTE_COLOR: Row[] = padRows(
-  [
-    { dept: "Running", revenue: "$46.4M", pct: "3.63%", orders: "11K", delta: "+$88", opportunity: "$48K" },
-    { dept: "Casual", revenue: "$28.0M", pct: "5.53%", orders: "17K", delta: "+$49", opportunity: "$39K" },
-    { dept: "Light Hike", revenue: "$46.1M", pct: "3.38%", orders: "12K", delta: "+$40", opportunity: "$24K" },
-  ],
-  28,
-  false,
-);
-
-const DISCOURAGE_SIZE: Row[] = padRows(
-  [
-    { dept: "Light Hike", revenue: "$6.1M", pct: "4.87%", orders: "2K", delta: "−$22", opportunity: "$2K" },
-    { dept: "Running", revenue: "$7.0M", pct: "3.18%", orders: "2K", delta: "−$18", opportunity: "$1K" },
-    { dept: "Originals", revenue: "$3.3M", pct: "3.99%", orders: "1K", delta: "−$14", opportunity: "$692" },
-    { dept: "Trail Running", revenue: "$1.3M", pct: "4.13%", orders: "582", delta: "−$28", opportunity: "$587" },
-    { dept: "Casual", revenue: "$1.5M", pct: "5.93%", orders: "564", delta: "−$13", opportunity: "$382" },
-  ],
-  28,
-  true,
-);
-
-/** Pads a table with deterministic rows so pagination has real pages. */
-function padRows(base: Row[], count: number, negative: boolean): Row[] {
+/** Pads a dimension's table with deterministic rows so pagination has real pages. */
+function padBrk(base: BrkRow[], count: number, dimension: "size" | "color"): BrkRow[] {
   const out = [...base];
   for (const dept of FILLER_DEPTS) {
     if (out.length >= count) break;
     if (out.some((r) => r.dept === dept)) continue;
     const d = Math.round(seeded(dept, 3, 8, 95));
+    const positive = seeded(dept, 6, 0, 1) > (dimension === "color" ? 0.2 : 0.45);
+    const rec: Rec = positive
+      ? dimension === "color" ? "promoteColor" : "allowSize"
+      : dimension === "color" ? "imgColor" : "discSize";
     out.push({
       dept,
       revenue: money(seeded(dept, 1, 3e5, 4e7)),
       pct: pctStr(seeded(dept, 2, 1.2, 8.4)),
-      orders: countStr(seeded(dept, 4, 120, 18000)),
-      delta: negative ? `−$${d}` : `+$${d}`,
+      returned: pctStr(seeded(dept, 7, 2, 34)),
+      delta: `${positive ? "+" : "−"}$${d}`,
+      positive,
+      rec,
       opportunity: money(seeded(dept, 5, 200, 42000)),
     });
   }
   return out;
 }
-
-// Even the least profitable color bracketing still earns per order, so there is
-// no opportunity from reducing it — which is the point of showing this table.
-const DISCOURAGE_COLOR_BASE: Row[] = [
-  { dept: "Non-Licensed", revenue: "$74K", pct: "4.85%", orders: "184", delta: "+$14", opportunity: "$0" },
-  { dept: "Socks", revenue: "$110K", pct: "1.65%", orders: "127", delta: "+$17", opportunity: "$0" },
-  { dept: "Licensed", revenue: "$413K", pct: "4.87%", orders: "1K", delta: "+$18", opportunity: "$0" },
-  { dept: "All Other", revenue: "$1.4M", pct: "8.1%", orders: "2K", delta: "+$20", opportunity: "$0" },
-  { dept: "Accessories", revenue: "$540K", pct: "5.9%", orders: "2K", delta: "+$23", opportunity: "$0" },
-];
-const DISCOURAGE_COLOR: Row[] = padRows(DISCOURAGE_COLOR_BASE, 28, false);
+const SIZE_ROWS = padBrk(SIZE_BASE, 22, "size");
+const COLOR_ROWS = padBrk(COLOR_BASE, 22, "color");
 
 /* --------------------------- primitives -------------------------- */
 
@@ -315,34 +310,48 @@ function BracketingOutcomes() {
   );
 }
 
-function ActionTable({
+function RecBadge({ rec }: { rec: Rec }) {
+  const m = REC_META[rec];
+  const cls =
+    m.tone === "good"
+      ? "bg-success-50 text-success-600"
+      : m.tone === "bad"
+        ? "bg-danger-50 text-danger-600"
+        : "bg-warning-50 text-warning-600";
+  return (
+    <span className={`inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${cls}`}>
+      {m.label}
+    </span>
+  );
+}
+
+function BrkTable({
+  id,
   title,
   subtitle,
   pctLabel,
   rows,
-  negative = false,
-  id,
 }: {
+  id: string;
   title: string;
   subtitle: string;
   pctLabel: string;
-  rows: Row[];
-  negative?: boolean;
-  id?: string;
+  rows: BrkRow[];
 }) {
-  const { slice, page, setPage, total, pageSize } = usePaged(rows, 5);
+  const { slice, page, setPage, total, pageSize } = usePaged(rows, 6);
   return (
     <Card id={id}>
       <CardHeading title={title} subtitle={subtitle} />
       <div className="mt-3 overflow-x-auto">
-        <table className="w-full text-left text-sm">
+        <table className="w-full min-w-[760px] text-left text-sm">
           <thead>
             <tr className="border-b border-neutral-200 text-[11px] text-neutral-600 [text-wrap:balance]">
               <th className="py-2 pr-1.5 align-bottom font-normal leading-tight">Department</th>
               <th className="px-1.5 py-2 text-right align-bottom font-normal leading-tight">Revenue</th>
               <th className="px-1.5 py-2 text-right align-bottom font-normal leading-tight">{pctLabel}</th>
-              <th className="px-1.5 py-2 text-right align-bottom font-normal leading-tight">Orders</th>
+              <th className="px-1.5 py-2 text-right align-bottom font-normal leading-tight">% Returned in Full</th>
               <th className="px-1.5 py-2 text-right align-bottom font-normal leading-tight">Δ Profit / Order</th>
+              <th className="px-1.5 py-2 align-bottom font-normal leading-tight">Recommendation</th>
               <th className="px-1.5 py-2 text-right align-bottom font-normal leading-tight">Rev. Opportunity</th>
               <th className="py-2 pl-1.5 font-normal" />
             </tr>
@@ -353,11 +362,12 @@ function ActionTable({
                 <td className="whitespace-nowrap py-3 pr-1.5 font-medium text-neutral-800">{r.dept}</td>
                 <td className="whitespace-nowrap px-1.5 py-3 text-right text-neutral-700">{r.revenue}</td>
                 <td className="whitespace-nowrap px-1.5 py-3 text-right text-neutral-700">{r.pct}</td>
-                <td className="whitespace-nowrap px-1.5 py-3 text-right text-neutral-700">{r.orders}</td>
-                <td
-                  className={`whitespace-nowrap px-1.5 py-3 text-right font-semibold ${negative ? "text-danger-600" : "text-success-600"}`}
-                >
+                <td className="whitespace-nowrap px-1.5 py-3 text-right text-neutral-700">{r.returned}</td>
+                <td className={`whitespace-nowrap px-1.5 py-3 text-right font-semibold ${r.positive ? "text-success-600" : "text-danger-600"}`}>
                   {r.delta}
+                </td>
+                <td className="px-1.5 py-3">
+                  <RecBadge rec={r.rec} />
                 </td>
                 <td className="whitespace-nowrap px-1.5 py-3 text-right font-semibold text-neutral-800">
                   {r.opportunity}
@@ -405,36 +415,22 @@ export default function BracketingTab({
         <BracketingProfit />
       </div>
       <RecommendedActions context="Bracketing" items={BRK_RECS} />
-      {/* Action tables pair up two-across on a wide screen, one-per-row when narrow. */}
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <ActionTable
-          id="bracketing-promote-size"
-          title="Allow size bracketing"
-          subtitle="Profitable size bracketing — prioritized by revenue opportunity (→1.05×)"
-          pctLabel="% Orders Brkt. Size"
-          rows={PROMOTE_SIZE}
-        />
-        <ActionTable
-          id="bracketing-promote-color"
-          title="Allow color bracketing"
-          subtitle="Profitable color bracketing — prioritized by revenue opportunity (→1.05×)"
-          pctLabel="% Orders Brkt. Color"
-          rows={PROMOTE_COLOR}
-        />
-        <ActionTable
-          title="Discourage size bracketing"
-          subtitle="Unprofitable size bracketing — opportunity from reducing (→0.95×)"
-          pctLabel="% Orders Brkt. Size"
-          rows={DISCOURAGE_SIZE}
-          negative
-        />
-        <ActionTable
-          title="Discourage color bracketing"
-          subtitle="Least profitable color bracketing — opportunity from reducing (→0.95×)"
-          pctLabel="% Orders Brkt. Color"
-          rows={DISCOURAGE_COLOR}
-        />
-      </div>
+      {/* One table per dimension — each carries allow / discourage / guidance in a
+          Recommendation column, so the two tables replace the old four. */}
+      <BrkTable
+        id="bracketing-promote-size"
+        title="Size bracketing"
+        subtitle="Every department's size bracketing, with the recommendation its economics imply · R12M"
+        pctLabel="% Brkt. on Size"
+        rows={SIZE_ROWS}
+      />
+      <BrkTable
+        id="bracketing-promote-color"
+        title="Color bracketing"
+        subtitle="Every department's color bracketing, with the recommendation its economics imply · R12M"
+        pctLabel="% Brkt. on Color"
+        rows={COLOR_ROWS}
+      />
     </>
   );
 }
