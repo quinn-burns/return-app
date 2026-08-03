@@ -48,6 +48,31 @@ const EXCH_OUTCOME = [
   { label: "Returned", pct: 33, color: "#dc2828" },
 ];
 
+/* Customer Value summary — how much customers come back and spend. */
+const VALUE = [
+  { label: "Repurchase Rate", value: "28.4%", sub: "1.7M customers", info: "Share of customers who place a second order." },
+  { label: "Net Rev / Customer", value: "$440", sub: "lifetime", info: "Lifetime net revenue per customer, after returns." },
+  { label: "New Cust. Repurchase", value: "28.4%", sub: "2nd order ≤ 12 mo", info: "New customers who buy again within a year." },
+  { label: "New Cust. Net Rev", value: "$403", sub: "first 12 months", info: "Net revenue from a new customer in their first year." },
+];
+
+/* Customer Journey summary — the biggest sequences across the whole journey. */
+const JOURNEY = [
+  { tone: "bad" as const, title: "Bracketers who return everything rarely come back", detail: "Size bracketers who send the whole order back repurchase at just 41% — the clearest early churn signal." },
+  { tone: "warn" as const, title: "A return with no exchange is the biggest leak", detail: "Only 4.4% of returns convert to a same-style exchange; the rest walk away with the refund." },
+  { tone: "good" as const, title: "The best journey is a bracket that works", detail: "Keep-all bracketed orders repurchase at 74% and drive the most downstream value into W Denim and W Tops." },
+];
+const JOURNEY_TONE: Record<"bad" | "warn" | "good", string> = {
+  bad: "border-danger-100 bg-danger-50",
+  warn: "border-warning-100 bg-warning-50",
+  good: "border-success-100 bg-success-50",
+};
+const JOURNEY_DOT: Record<"bad" | "warn" | "good", string> = {
+  bad: "#dc2828",
+  warn: "#f59f0a",
+  good: "#059467",
+};
+
 /* --------------------------- primitives -------------------------- */
 
 function ArrowRight() {
@@ -100,14 +125,14 @@ function AreaCard({
 }: {
   title: string;
   subtitle: string;
-  onDetails: () => void;
+  onDetails?: () => void;
   children: React.ReactNode;
 }) {
   return (
     <Card>
       <div className="flex items-start justify-between gap-3">
         <CardHeading title={title} subtitle={subtitle} />
-        <DetailsLink onClick={onDetails} />
+        {onDetails ? <DetailsLink onClick={onDetails} /> : null}
       </div>
       <div className="mt-4">{children}</div>
     </Card>
@@ -217,6 +242,55 @@ function KpiRow() {
         </div>
       ))}
     </div>
+  );
+}
+
+/** Customer Value summary — no dedicated tab, so no Details link. */
+function CustomerValueSummary() {
+  return (
+    <AreaCard
+      title="Customer Value"
+      subtitle="How much customers come back and spend after they buy · all time"
+    >
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {VALUE.map((v) => (
+          <div key={v.label}>
+            <p className="flex items-center gap-1 text-xs text-neutral-600">
+              {v.label}
+              <InfoTip label={v.label} text={v.info} />
+            </p>
+            <p className="mt-0.5 text-2xl font-bold text-neutral-800">{v.value}</p>
+            <p className="text-[11px] text-neutral-600">{v.sub}</p>
+          </div>
+        ))}
+      </div>
+    </AreaCard>
+  );
+}
+
+/** Customer Journey summary — the biggest sequences, as tone-coded callouts. */
+function CustomerJourneySummary({ onGo }: { onGo: (tab: string, anchor: string) => void }) {
+  return (
+    <AreaCard
+      title="Customer Journey"
+      subtitle="The biggest sequences across bracketing, returns and repurchase · rolling 12 months"
+      onDetails={() => onGo("Customer Journey", "flow-journeys")}
+    >
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {JOURNEY.map((c) => (
+          <div key={c.title} className={`rounded-lg border p-3 ${JOURNEY_TONE[c.tone]}`}>
+            <div className="flex items-start gap-2">
+              <span
+                className="mt-1 size-2 shrink-0 rounded-full"
+                style={{ backgroundColor: JOURNEY_DOT[c.tone] }}
+              />
+              <p className="text-sm font-semibold leading-snug text-neutral-800">{c.title}</p>
+            </div>
+            <p className="mt-1.5 text-xs leading-relaxed text-neutral-600">{c.detail}</p>
+          </div>
+        ))}
+      </div>
+    </AreaCard>
   );
 }
 
@@ -344,9 +418,11 @@ export default function BriefingTab({ onGo }: { onGo: (tab: string, anchor?: str
       <MoneyBar onGo={onGo} />
       <BriefingInsights />
       <KpiRow />
+      <CustomerValueSummary />
       <SegmentsSummary onGo={onGo} />
       <BracketingSummary onGo={onGo} />
       <ExchangeSummary onGo={onGo} />
+      <CustomerJourneySummary onGo={onGo} />
     </>
   );
 }

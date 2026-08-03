@@ -9,8 +9,10 @@ import {
   InsightLink,
   KpiStrip,
   Pagination,
+  RecommendedActions,
   TakeAction,
   usePaged,
+  type RecItem,
 } from "./parts";
 import { FILLER_DEPTS, money, pctStr, seeded } from "./filler";
 
@@ -334,6 +336,12 @@ function GuidanceTable({
 
 /* ----------------------------- tab ------------------------------- */
 
+const EXCH_RECS: RecItem[] = [
+  { label: "Promote size exchanges", tone: "good", impact: "$41K", context: "Exchange", department: "Light Hike", why: "Only 4.4% of returns convert to an exchange today; each conversion moves that customer from a 41% repeat rate to 58%." },
+  { label: "Promote color exchanges", tone: "good", impact: "$16K", context: "Exchange", department: "Running", why: "The same mechanism at lower volume — a straightforward extension once the size-exchange prompt is live." },
+  { label: "Improve color imagery", tone: "warn", impact: "$6.5K", context: "Exchange", department: "Lowdown", why: "Tighten PDP color accuracy so fewer color exchanges come back a second time." },
+];
+
 export default function ExchangeTab({
   insight,
   description,
@@ -354,6 +362,7 @@ export default function ExchangeTab({
         <ExchangeOutcome />
         <ComeBack />
       </div>
+      <RecommendedActions context="Exchange" items={EXCH_RECS} />
       {/* Action tables pair up two-across on a wide screen, one-per-row when narrow. */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <PromoteTable

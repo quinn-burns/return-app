@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Card, CardHeading, ExportButton, KpiStrip, Pagination, usePaged } from "./parts";
+import { Card, CardHeading, ExportButton, KpiStrip, Pagination, RecommendedActions, usePaged, type RecItem } from "./parts";
 import { seeded } from "./filler";
 import { ExportToastProvider, useExportToast } from "./ExportToast";
 
@@ -386,6 +386,12 @@ function padCustomers(seg: Segment): Customer[] {
 
 /* ----------------------------- tab ------------------------------- */
 
+const SEG_RECS: RecItem[] = [
+  { label: "Stop promoting to unprofitable customers", tone: "bad", impact: "$1.5M at risk", context: "Segments", department: "Unprofitable Customers", why: "836 customers return 48% of what they buy — acquisition spend here funds its own returns." },
+  { label: "Review likely resellers", tone: "warn", impact: "$743K at risk", context: "Segments", department: "Likely Resellers", why: "1,947 accounts at a 59.7% return rate, the highest of any segment you track." },
+  { label: "Win back new, no-repurchase customers", tone: "good", impact: "$4.3M", context: "Segments", department: "New customers", why: "1,574 new customers returned once and never came back — a targeted win-back list before the value is lost." },
+];
+
 export default function SegmentsTab() {
   const [selected, setSelected] = useState<string[]>(DEFAULT_SELECTED);
   const toggle = (name: string) =>
@@ -412,6 +418,7 @@ export default function SegmentsTab() {
       ) : (
         <>
           {shown.length > 1 ? <SegmentImpact segments={shown} /> : null}
+          <RecommendedActions context="Segments" items={SEG_RECS} />
           {shown.map((s) => (
             <SegmentSection key={s.name} segment={s} />
           ))}

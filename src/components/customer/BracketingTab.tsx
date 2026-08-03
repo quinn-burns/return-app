@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { AiInsight, Donut, Pagination, TakeAction, usePaged, useReveal } from "./parts";
+import { AiInsight, Donut, Pagination, RecommendedActions, TakeAction, usePaged, useReveal, type RecItem } from "./parts";
 import { FILLER_DEPTS, countStr, money, pctStr, seeded } from "./filler";
 
 type Trend = "down" | "up" | "flat";
@@ -375,6 +375,13 @@ function ActionTable({
   );
 }
 
+const BRK_RECS: RecItem[] = [
+  { label: "Promote color bracketing", tone: "good", impact: "$111K", context: "Bracketing", department: "Running", why: "Color-bracketed orders keep 90% of the order and earn about +$44 each — expand where volume is high, starting with Running and Casual." },
+  { label: "Allow size bracketing where it pays", tone: "good", impact: "$50K", context: "Bracketing", department: "Steel Toe", why: "Profitable in the footwear toe categories where fit is predictable (Steel and Soft Toe), so the usual size-bracketing downside does not apply." },
+  { label: "Improve size guidance", tone: "warn", impact: "Retention", context: "Bracketing", department: "Size bracketing", why: "Two in five size-bracketed orders come back in full — clearer PDP fit guidance cuts the outcome most likely to end the relationship." },
+  { label: "Discourage size bracketing", tone: "bad", impact: "$4.7K", context: "Bracketing", department: "Light Hike", why: "Nudge it down in the categories where it loses margin, without touching the categories where it pays." },
+];
+
 export default function BracketingTab({
   insight,
   description,
@@ -394,9 +401,10 @@ export default function BracketingTab({
           same layout as the Exchange tab. */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <TypeBreakdown />
-        <BracketingProfit />
         <BracketingOutcomes />
+        <BracketingProfit />
       </div>
+      <RecommendedActions context="Bracketing" items={BRK_RECS} />
       {/* Action tables pair up two-across on a wide screen, one-per-row when narrow. */}
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <ActionTable

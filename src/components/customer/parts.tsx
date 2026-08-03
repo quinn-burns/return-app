@@ -203,6 +203,64 @@ export function TakeAction({ context, department }: { context: string; departmen
   );
 }
 
+/** A curated "Recommended actions" block, shared by the detail tabs. Each item
+    is a plain-language recommendation with a tone, a why, its modeled impact,
+    and a Take action CTA that opens the same action flow the tables use. */
+export type RecTone = "good" | "warn" | "bad";
+export type RecItem = {
+  label: string;
+  tone: RecTone;
+  why: string;
+  impact: string;
+  context: string;
+  department: string;
+};
+export function RecommendedActions({
+  context,
+  items,
+}: {
+  context: string;
+  items: RecItem[];
+}) {
+  const toneCls: Record<RecTone, string> = {
+    good: "bg-success-50 text-success-600 ring-success-100",
+    warn: "bg-warning-50 text-warning-600 ring-warning-100",
+    bad: "bg-danger-50 text-danger-600 ring-danger-100",
+  };
+  return (
+    <Card>
+      <CardHeading
+        title="Recommended actions"
+        subtitle={`What the ${context.toLowerCase()} data says to do, ranked by what it's worth.`}
+      />
+      <ol className="mt-3 flex flex-col">
+        {items.map((a, i) => (
+          <li
+            key={a.label}
+            className="flex flex-wrap items-start gap-x-4 gap-y-2 border-b border-primary-50 py-3 last:border-b-0"
+          >
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary-50 text-xs font-semibold text-primary-600">
+              {i + 1}
+            </span>
+            <div className="min-w-[240px] flex-1">
+              <span
+                className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${toneCls[a.tone]}`}
+              >
+                {a.label}
+              </span>
+              <p className="mt-1 text-xs leading-relaxed text-neutral-600">{a.why}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="whitespace-nowrap text-xs font-semibold text-neutral-800">{a.impact}</span>
+              <TakeAction context={context} department={a.department} />
+            </div>
+          </li>
+        ))}
+      </ol>
+    </Card>
+  );
+}
+
 export function InsightLink({ label }: { label: string }) {
   return (
     <button
