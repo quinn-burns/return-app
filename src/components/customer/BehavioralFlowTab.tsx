@@ -587,7 +587,7 @@ function SankeyFlow() {
   return (
     <Card>
       <CardHeading
-        title="Behavioral flow"
+        title="Customer journeys"
         subtitle="How customers move from bracketing, through what they keep, to whether they come back and what they buy next. Hover any bar or flow for its numbers; click to trace a path."
       />
       <div className="mt-4">
@@ -611,13 +611,13 @@ export default function BehavioralFlowTab() {
   const focusN = useRef(0);
   return (
     <>
+      <RecommendedActions context="Customer Journey" items={JNY_RECS} />
       <SankeyFlow />
       <JourneyTreemap
         journeys={JOURNEYS}
         onFocus={(key) => setFocus({ key, n: ++focusN.current })}
       />
       <JourneysModule journeys={JOURNEYS} focus={focus} />
-      <RecommendedActions context="Customer Journey" items={JNY_RECS} />
     </>
   );
 }
