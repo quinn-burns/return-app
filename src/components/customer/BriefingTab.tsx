@@ -20,10 +20,10 @@ const BRACKETING_DEF =
 type Kpi = { label: string; value: string; sub: string; info?: string; risk?: boolean };
 const KPIS: Kpi[] = [
   { label: "Return Rate", value: "14.76%", sub: "of items returned", info: "Share of shipped items returned, rolling 12 months." },
+  { label: "Repurchase Rate", value: "28.4%", sub: "buy a second time", info: "Share of customers who place a second order." },
+  { label: "Net Rev / Customer", value: "$440", sub: "lifetime, after returns", info: "Lifetime net revenue per customer, after returns." },
   { label: "% Orders Bracketed", value: "8.46%", sub: "of all orders", info: "Orders with multiple sizes or colors of one style." },
   { label: "Same-Style Exchange Rate", value: "4.4%", sub: "of returns recovered", info: "Returns saved as a same-style swap rather than a refund." },
-  { label: "Repurchase (Kept All)", value: "74%", sub: "buy again", info: "Customers who kept a full order and came back." },
-  { label: "Revenue at Risk", value: "$4.3M", sub: "1,574 fragile customers", risk: true },
 ];
 
 /* Segments summary — the at-risk groups, listed (they overlap, so not summed). */
@@ -48,12 +48,13 @@ const EXCH_OUTCOME = [
   { label: "Returned", pct: 33, color: "#dc2828" },
 ];
 
-/* Customer Value summary — how much customers come back and spend. */
+/* Customer Value summary — the new-customer lens, so it doesn't repeat the
+   overall repurchase/net-rev headlines already in the KPI row. */
 const VALUE = [
-  { label: "Repurchase Rate", value: "28.4%", sub: "1.7M customers", info: "Share of customers who place a second order." },
-  { label: "Net Rev / Customer", value: "$440", sub: "lifetime", info: "Lifetime net revenue per customer, after returns." },
-  { label: "New Cust. Repurchase", value: "28.4%", sub: "2nd order ≤ 12 mo", info: "New customers who buy again within a year." },
-  { label: "New Cust. Net Rev", value: "$403", sub: "first 12 months", info: "Net revenue from a new customer in their first year." },
+  { label: "New-Cust. Repurchase", value: "22%", sub: "2nd order ≤ 12 mo", info: "New customers who buy again within a year." },
+  { label: "New-Cust. Net Rev", value: "$403", sub: "first 12 months", info: "Net revenue from a new customer in their first year." },
+  { label: "Repeat within 90 days", value: "12.1%", sub: "of first-time buyers", info: "First-time buyers who return for a second order within 90 days." },
+  { label: "Avg Orders / Customer", value: "2.4", sub: "lifetime", info: "Average lifetime orders per customer." },
 ];
 
 /* Customer Journey summary — the biggest sequences across the whole journey. */
@@ -213,27 +214,31 @@ function BriefingInsights() {
         {
           lead: (
             <>
-              Bracketing <InfoTip label="What is bracketing?" text={BRACKETING_DEF} /> pulls in
-              opposite directions.
+              Color bracketing <InfoTip label="What is bracketing?" text={BRACKETING_DEF} /> pays;
+              size bracketing leaks.
             </>
           ),
-          text: "Color bracketing recovers the most and retains best, while size bracketing leaks the most — so scope any size-guidance rollout to size only, or it suppresses your best lever.",
+          text: "Color-bracketed orders are kept and repeat; size-bracketed ones come back and churn — so scope any size-guidance rollout to size only, or you suppress your best lever.",
         },
         {
-          lead: "Your churn and your margin leak are the same 1,574 customers.",
+          lead: "Your churn and your margin leak are the same customers.",
           text: "New customers who return once and never come back overlap heavily with size bracketers, so one intervention can move both problems.",
         },
         {
-          lead: "Fewer than one return in twenty is being recovered as an exchange.",
-          text: "Each conversion moves that customer from a 41% repeat rate to 58%, so the retention gain far outweighs the modest dollar figure.",
+          lead: "Fewer than one return in twenty is recovered as an exchange.",
+          text: "Each conversion moves that customer from a 41% repeat rate to 58% — a large retention gain for a small operational change.",
         },
         {
-          lead: "Keeping the whole order is the strongest predictor of a second purchase.",
+          lead: "Keeping the whole first order predicts a second purchase.",
           text: "Keep-all customers come back at 74% while full returners sit at 41% — the clearest early churn signal to act on.",
         },
         {
-          lead: "A returning customer is worth $440, but only 28% come back.",
-          text: "Lifting repurchase even slightly compounds across 1.7M customers, which is where the largest long-term upside sits.",
+          lead: "The first order is where retention is won or lost.",
+          text: "Customers who return everything on their first order almost never come back, so intervening at that first return matters more than any later touch.",
+        },
+        {
+          lead: "The department they return into predicts what they buy next.",
+          text: "Kept-all customers concentrate their next purchase in W Denim and W Tops — the clearest place to aim a follow-up offer.",
         },
       ]}
     />
@@ -267,14 +272,17 @@ function CustomerValueSummary() {
       title="Customer Value"
       subtitle="How much customers come back and spend after they buy · all time"
     >
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {VALUE.map((v) => (
-          <div key={v.label}>
+          <div
+            key={v.label}
+            className="flex flex-col gap-1 rounded-lg border border-neutral-200 bg-neutral-0 p-4"
+          >
             <p className="flex items-center gap-1 text-xs text-neutral-600">
               {v.label}
               <InfoTip label={v.label} text={v.info} />
             </p>
-            <p className="mt-0.5 text-2xl font-bold text-neutral-800">{v.value}</p>
+            <p className="text-2xl font-bold text-neutral-800">{v.value}</p>
             <p className="text-[11px] text-neutral-600">{v.sub}</p>
           </div>
         ))}
@@ -317,11 +325,14 @@ function SegmentsSummary({ onGo }: { onGo: (tab: string, anchor: string) => void
       subtitle="Exportable groups of customers to act on · rolling 12 months"
       onDetails={() => onGo("Segments", "segments-impact")}
     >
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {SEGMENTS.map((s) => (
-          <div key={s.name}>
+          <div
+            key={s.name}
+            className="flex flex-col gap-1 rounded-lg border border-neutral-200 bg-neutral-0 p-4"
+          >
             <p className="text-xs text-neutral-600">{s.name}</p>
-            <p className="mt-0.5 text-2xl font-bold leading-tight text-danger-600">{s.count}</p>
+            <p className="text-2xl font-bold leading-tight text-danger-600">{s.count}</p>
             <p className="text-[11px] text-neutral-600">
               {s.revenue} · {s.rate}
             </p>
@@ -342,24 +353,17 @@ function BracketingSummary({ onGo }: { onGo: (tab: string, anchor: string) => vo
       subtitle="How much of the business is bracketed, and what happens when it is · rolling 12 months"
       onDetails={() => onGo("Bracketing", "bracketing-profit")}
     >
-      <div className="flex flex-col items-center gap-6 lg:flex-row lg:justify-between">
-        <div className="flex gap-8">
-          <div>
-            <p className="text-xs text-neutral-600">% Orders Bracketed</p>
-            <p className="mt-0.5 text-2xl font-bold text-neutral-800">8.46%</p>
-            <p className="text-[11px] text-neutral-600">143K of 847K orders</p>
-          </div>
-          <div>
-            <p className="flex items-center gap-1 text-xs text-neutral-600">
-              Size brackets returned in full
-              <InfoTip label="Size brackets returned" text="Share of size-bracketed orders where every item came back." />
-            </p>
-            <p className="mt-0.5 text-2xl font-bold text-danger-600">40%</p>
-            <p className="text-[11px] text-neutral-600">vs 2% for color</p>
-          </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-center">
+        <div>
+          <p className="flex items-center gap-1 text-xs text-neutral-600">
+            Size brackets returned in full
+            <InfoTip label="Size brackets returned" text="Share of size-bracketed orders where every item came back." />
+          </p>
+          <p className="mt-0.5 text-2xl font-bold text-danger-600">40%</p>
+          <p className="text-[11px] text-neutral-600">vs 2% for color</p>
         </div>
-        <div className="flex items-center gap-4">
-          <Donut segments={arcs} centerTop="171K" centerBottom="orders" size={104} />
+        <div className="flex items-center justify-center gap-4">
+          <Donut segments={arcs} centerTop="171K" centerBottom="bracketed" size={104} />
           <div className="flex flex-col gap-1.5">
             {BRK_TYPES.map((t) => (
               <span key={t.label} className="flex items-center gap-2 text-xs text-neutral-700">
@@ -369,12 +373,12 @@ function BracketingSummary({ onGo }: { onGo: (tab: string, anchor: string) => vo
             ))}
           </div>
         </div>
-        <div className="text-sm">
+        <div className="lg:text-right">
           <p className="text-xs text-neutral-600">Profit per bracketed order</p>
-          <p className="mt-1 text-neutral-800">
+          <p className="mt-1 text-sm text-neutral-800">
             Best · Color <span className="font-semibold text-success-600">+$44</span>
           </p>
-          <p className="text-neutral-800">
+          <p className="text-sm text-neutral-800">
             Worst · Size <span className="font-semibold text-danger-600">−$7</span>
           </p>
         </div>
@@ -391,21 +395,14 @@ function ExchangeSummary({ onGo }: { onGo: (tab: string, anchor: string) => void
       subtitle="How much return revenue is recovered by a same-style swap · rolling 12 months"
       onDetails={() => onGo("Exchange", "exchange-promote")}
     >
-      <div className="flex flex-col items-center gap-6 lg:flex-row lg:justify-between">
-        <div className="flex gap-8">
-          <div>
-            <p className="text-xs text-neutral-600">Same-Style Exchange Rate</p>
-            <p className="mt-0.5 text-2xl font-bold text-neutral-800">4.4%</p>
-            <p className="text-[11px] text-neutral-600">5K of 154K returned items</p>
-          </div>
-          <div>
-            <p className="text-xs text-neutral-600">Exchanges that stick</p>
-            <p className="mt-0.5 text-2xl font-bold text-success-600">67%</p>
-            <p className="text-[11px] text-neutral-600">33% come back again</p>
-          </div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-center">
+        <div>
+          <p className="text-xs text-neutral-600">Exchanges that stick</p>
+          <p className="mt-0.5 text-2xl font-bold text-success-600">67%</p>
+          <p className="text-[11px] text-neutral-600">33% come back again</p>
         </div>
-        <div className="flex items-center gap-4">
-          <Donut segments={EXCH_OUTCOME} centerTop="4.4%" centerBottom="recovered" size={104} />
+        <div className="flex items-center justify-center gap-4">
+          <Donut segments={EXCH_OUTCOME} centerTop="5K" centerBottom="exchanges" size={104} />
           <div className="flex flex-col gap-1.5">
             {EXCH_OUTCOME.map((t) => (
               <span key={t.label} className="flex items-center gap-2 text-xs text-neutral-700">
@@ -415,10 +412,10 @@ function ExchangeSummary({ onGo }: { onGo: (tab: string, anchor: string) => void
             ))}
           </div>
         </div>
-        <div className="text-sm">
-          <p className="text-xs text-neutral-600">Exchange program opportunity</p>
+        <div className="lg:text-right">
+          <p className="text-xs text-neutral-600">Program opportunity</p>
           <p className="mt-1 text-2xl font-bold text-success-600">$66K</p>
-          <p className="text-[11px] text-neutral-600">modeled: lifting capture to 5.0% of returns</p>
+          <p className="text-[11px] text-neutral-600">lifting capture to 5.0% of returns</p>
         </div>
       </div>
     </AreaCard>

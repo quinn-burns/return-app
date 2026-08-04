@@ -85,27 +85,6 @@ export function CardHeading({
 }
 
 /** Thumb icon for the "Was this helpful?" affordance (down = rotated). */
-function Thumb({ down = false }: { down?: boolean }) {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-      style={down ? { transform: "rotate(180deg)" } : undefined}
-    >
-      <path
-        d="M7 10v12M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 /** AI insight card: white card, blue-titled header, the read in a left-accent
     tinted row, and a "Was this helpful?" footer. */
 export function AiInsight({
@@ -150,15 +129,6 @@ export function AiInsight({
         </div>
       )}
       {footer ? <div className="mt-3">{footer}</div> : null}
-      <div className="mt-3 flex items-center justify-center gap-2.5 text-xs text-neutral-600">
-        Was this helpful?
-        <button type="button" aria-label="Not helpful" className="text-danger-600 transition-colors hover:text-danger-700">
-          <Thumb down />
-        </button>
-        <button type="button" aria-label="Helpful" className="text-success-600 transition-colors hover:text-success-700">
-          <Thumb />
-        </button>
-      </div>
     </div>
   );
 }
