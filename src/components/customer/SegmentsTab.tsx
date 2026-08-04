@@ -266,6 +266,9 @@ function SortHeader({
 
 function SegmentSection({ segment }: { segment: Segment }) {
   const showToast = useExportToast();
+  // Collapsed by default: the summary numbers are the "at a glance", and the
+  // customer table is the drill-down you open when you want it.
+  const [open, setOpen] = useState(false);
   const [sort, setSort] = useState<{ key: ColKey; dir: "asc" | "desc" } | null>(null);
 
   const rows = padCustomers(segment);
@@ -295,15 +298,45 @@ function SegmentSection({ segment }: { segment: Segment }) {
   return (
     <Card>
       <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-lg font-bold text-neutral-800">{segment.name}</h2>
-          <p className="text-xs text-neutral-600">{segment.thresholds}</p>
-        </div>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="group flex flex-1 items-start gap-2 text-left"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+            className={`mt-1 shrink-0 text-neutral-400 transition-transform group-hover:text-primary-600 ${open ? "" : "-rotate-90"}`}
+          >
+            <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="flex flex-col gap-1">
+            <span className="text-lg font-bold text-neutral-800 group-hover:text-primary-700">{segment.name}</span>
+            <span className="text-xs text-neutral-600">{segment.thresholds}</span>
+          </span>
+        </button>
         <ExportButton onClick={showToast} icon />
       </div>
       <div className="mt-3">
         <KpiStrip items={segment.summary} cols={6} />
       </div>
+      {!open ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-neutral-200 py-2 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50"
+        >
+          View {summaryVal(segment, "Customer Count")} customers
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      ) : (
+        <>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead>
@@ -331,6 +364,8 @@ function SegmentSection({ segment }: { segment: Segment }) {
         </table>
       </div>
       <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
+        </>
+      )}
     </Card>
   );
 }
