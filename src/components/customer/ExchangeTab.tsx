@@ -8,6 +8,7 @@ import {
   Donut,
   InsightLink,
   KpiStrip,
+  MetricsCard,
   Pagination,
   RecommendedActions,
   TakeAction,
@@ -399,8 +400,9 @@ export default function ExchangeTab({
       <AiInsight title="Exchange Insights" subtitle={description}>
         {insight}
       </AiInsight>
-      {/* KPIs are metrics, not AI output, so they sit in their own box below. */}
-      <KpiStrip items={KPIS} cols={4} />
+      <MetricsCard>
+        <KpiStrip items={KPIS} cols={4} />
+      </MetricsCard>
       {/* Four exchange charts on a 2×2 grid on a wide screen, stacked when narrow. */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <ExchangeKind />

@@ -84,7 +84,30 @@ export function CardHeading({
   );
 }
 
-/** AI-generated insight callout, matching the Overview "AI Returns Summary" card. */
+/** Thumb icon for the "Was this helpful?" affordance (down = rotated). */
+function Thumb({ down = false }: { down?: boolean }) {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      style={down ? { transform: "rotate(180deg)" } : undefined}
+    >
+      <path
+        d="M7 10v12M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** AI insight card: white card, blue-titled header, the read in a left-accent
+    tinted row, and a "Was this helpful?" footer. */
 export function AiInsight({
   title = "AI Insight",
   subtitle,
@@ -97,21 +120,50 @@ export function AiInsight({
   children: ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-primary-100 bg-primary-50">
-      <div className="p-4">
-        <div className="flex items-center gap-1.5">
-          <span className="flex items-center justify-center rounded-full bg-gradient-to-b from-[#27cba7] to-[#0b61dd] p-[3.5px]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/overview/ai-logo.svg" alt="" className="size-[17px]" />
-          </span>
-          <h2 className="text-xl font-semibold text-primary-700">{title}</h2>
-        </div>
-        {subtitle ? <p className="mt-1 text-xs text-neutral-600">{subtitle}</p> : null}
-        <p className="mt-1.5 w-full text-sm leading-5 text-neutral-700">{children}</p>
+    <div className="rounded-lg border border-neutral-200 bg-neutral-0 p-4">
+      <div className="flex items-center gap-1.5">
+        <span className="flex items-center justify-center rounded-full bg-gradient-to-b from-[#27cba7] to-[#0b61dd] p-[3.5px]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/overview/ai-logo.svg" alt="" className="size-[17px]" />
+        </span>
+        <h2 className="text-xl font-semibold text-primary-700">{title}</h2>
       </div>
-      {/* Optional slot for the tab's KPI box, inset so the tinted card shows
-          around it and it reads as a contained box within the insight. */}
-      {footer ? <div className="px-4 pb-4">{footer}</div> : null}
+      {subtitle ? <p className="mt-1 text-xs text-neutral-600">{subtitle}</p> : null}
+      <div className="mt-3 rounded-r-md border-l-[3px] border-primary-600 bg-primary-50 px-3 py-2.5">
+        <p className="w-full text-sm leading-relaxed text-neutral-700">{children}</p>
+      </div>
+      {footer ? <div className="mt-3">{footer}</div> : null}
+      <div className="mt-3 flex items-center justify-center gap-2.5 text-xs text-neutral-600">
+        Was this helpful?
+        <button type="button" aria-label="Not helpful" className="text-danger-600 transition-colors hover:text-danger-700">
+          <Thumb down />
+        </button>
+        <button type="button" aria-label="Helpful" className="text-success-600 transition-colors hover:text-success-700">
+          <Thumb />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Titled wrapper for a page's headline metrics — "Key Performance Metrics"
+    over the metric-card grid, matching the design. */
+export function MetricsCard({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded-lg border border-neutral-200 bg-neutral-0 p-4">
+      <div className="flex items-center gap-1.5">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M3 3v18h18M8 17V9m5 8V5m5 12v-6"
+            stroke="#4169e1"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <h2 className="text-base font-semibold text-neutral-800">Key Performance Metrics</h2>
+      </div>
+      <div className="mt-4">{children}</div>
     </div>
   );
 }

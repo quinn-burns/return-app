@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { AiInsight, Donut, Pagination, RecommendedActions, TakeAction, usePaged, useReveal, type RecItem } from "./parts";
+import { AiInsight, Donut, MetricsCard, Pagination, RecommendedActions, TakeAction, usePaged, useReveal, type RecItem } from "./parts";
 import { FILLER_DEPTS, countStr, money, pctStr, seeded } from "./filler";
 
 type Trend = "down" | "up" | "flat";
@@ -404,9 +404,10 @@ export default function BracketingTab({
       <AiInsight title="Bracketing Insights" subtitle={description}>
         {insight}
       </AiInsight>
-      {/* KPIs are metrics, not AI output, so they sit in their own box below the
-          insight rather than inside it. */}
-      <KpiRow />
+      {/* KPIs are metrics, not AI output, so they sit in their own titled box. */}
+      <MetricsCard>
+        <KpiRow />
+      </MetricsCard>
       {/* Three charts share one row on a wide screen and stack below it, the
           same layout as the Exchange tab. */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">

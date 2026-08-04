@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardHeading, Donut } from "./parts";
+import { Card, CardHeading, Donut, MetricsCard } from "./parts";
 
 /* ----------------------------- data ----------------------------- */
 
@@ -145,15 +145,15 @@ function AreaCard({
 function MoneyBar({ onGo }: { onGo: (tab: string, anchor: string) => void }) {
   const total = RECOVERABLE.reduce((s, r) => s + r.value, 0);
   return (
-    <section className="overflow-hidden rounded-lg bg-primary-700 text-neutral-0">
+    <section className="overflow-hidden rounded-lg border border-primary-100 bg-primary-50">
       <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-stretch lg:gap-8">
         <div className="flex-1">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary-100">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary-700">
             <span className="size-2 rounded-full bg-brand-teal" />
             Money to gain
           </p>
-          <p className="mt-1.5 text-[44px] font-bold leading-none">{RECOVERABLE_TOTAL}</p>
-          <p className="mt-2 text-xs text-primary-100">
+          <p className="mt-1.5 text-[44px] font-bold leading-none text-neutral-800">{RECOVERABLE_TOTAL}</p>
+          <p className="mt-2 text-xs text-neutral-600">
             Recoverable across bracketing and exchange — a total that exists only by summing both.
           </p>
           <div className="mt-3.5 flex h-2 max-w-[420px] overflow-hidden rounded-full">
@@ -163,13 +163,13 @@ function MoneyBar({ onGo }: { onGo: (tab: string, anchor: string) => void }) {
           </div>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
             {RECOVERABLE.map((r) => (
-              <span key={r.area} className="flex items-center gap-1.5 text-xs text-primary-100">
+              <span key={r.area} className="flex items-center gap-1.5 text-xs text-neutral-600">
                 <span className="size-2 rounded-full" style={{ backgroundColor: r.color }} />
-                {r.area} <span className="font-semibold text-neutral-0">{r.display}</span>
+                {r.area} <span className="font-semibold text-neutral-800">{r.display}</span>
               </span>
             ))}
           </div>
-          <details className="mt-2.5 text-[11px] text-primary-100">
+          <details className="mt-2.5 text-[11px] text-neutral-500">
             <summary className="cursor-pointer select-none">How this is calculated</summary>
             <p className="mt-1 max-w-[440px] leading-snug">
               Rolling 12 months. Sum of the revenue-opportunity column across each action table, top
@@ -178,22 +178,22 @@ function MoneyBar({ onGo }: { onGo: (tab: string, anchor: string) => void }) {
           </details>
         </div>
 
-        <div className="hidden w-px shrink-0 bg-primary-500 lg:block" />
+        <div className="hidden w-px shrink-0 bg-primary-100 lg:block" />
 
-        <div className="flex flex-col justify-center rounded-lg bg-primary-600/40 p-4 lg:w-[320px]">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary-100">
+        <div className="flex flex-col justify-center rounded-lg border border-primary-100 bg-neutral-0 p-4 lg:w-[320px]">
+          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary-700">
             <span className="size-2 rounded-full bg-warning-400" />
             Money to protect
           </p>
-          <p className="mt-1.5 text-[28px] font-bold leading-none">$4.3M</p>
-          <p className="mt-2 text-xs leading-relaxed text-primary-100">
+          <p className="mt-1.5 text-[28px] font-bold leading-none text-neutral-800">$4.3M</p>
+          <p className="mt-2 text-xs leading-relaxed text-neutral-600">
             Revenue you already hold, sitting in your most fragile group — 1,574 new customers who
             returned once and never came back.
           </p>
           <button
             type="button"
             onClick={() => onGo("Segments", "segments-impact")}
-            className="mt-2.5 inline-flex items-center gap-1 self-start text-xs font-medium text-neutral-0 underline underline-offset-2 transition-opacity hover:opacity-80"
+            className="mt-2.5 inline-flex items-center gap-1 self-start text-xs font-medium text-primary-600 transition-colors hover:text-primary-700"
           >
             See all at-risk segments
             <ArrowRight />
@@ -417,7 +417,9 @@ export default function BriefingTab({ onGo }: { onGo: (tab: string, anchor?: str
     <>
       <MoneyBar onGo={onGo} />
       <BriefingInsights />
-      <KpiRow />
+      <MetricsCard>
+        <KpiRow />
+      </MetricsCard>
       <CustomerValueSummary />
       <SegmentsSummary onGo={onGo} />
       <BracketingSummary onGo={onGo} />
