@@ -13,16 +13,14 @@ const KPIS: { label: string; value: string; change: string; trend: Trend }[] = [
   { label: "% Orders Bracketed on Color", value: "4.33%", change: "↓ 0.2 pts vs LY", trend: "down" },
 ];
 
-// Share of bracketed orders that involve each dimension. Orders can bracket on
-// both size and color, so these shares overlap and add to more than 100%.
+// A mutually-exclusive split of bracketed orders — size only, color only, or
+// both dimensions — so the ring sums to 100%. The Exchange "what kind?" donut
+// uses the same three colors for the same three categories.
 const BRACKETED_TOTAL = "171K";
 const TYPE_BREAKDOWN = [
-  // Nominal categories: primary blue + warning-600 orange (a deeper orange than
-  // the amber used for "Kept some", so the two stay distinguishable).
-  // The Exchange "what kind?" chart uses these same three colors.
-  { label: "Size", pct: 65, orders: "111K", color: "#4169e1" },
-  { label: "Color", pct: 51, orders: "87K", color: "#27cba7" },
-  { label: "Other", pct: 2, orders: "3K", color: "#ababab" },
+  { label: "Size only", pct: 55, orders: "94K", color: "#4169e1" },
+  { label: "Color only", pct: 33, orders: "56K", color: "#27cba7" },
+  { label: "Both", pct: 12, orders: "21K", color: "#8b5cf6" },
 ];
 
 // Profit and outcome per bracketing type, ordered best → worst profit per order.
@@ -172,23 +170,15 @@ function KpiRow() {
 }
 
 function TypeBreakdown() {
-  // Shares overlap (an order can bracket on both), so normalize for the ring
-  // while the legend keeps the true per-dimension percentages.
-  const total = TYPE_BREAKDOWN.reduce((s, t) => s + t.pct, 0);
-  const arcs = TYPE_BREAKDOWN.map((t) => ({
-    label: t.label,
-    pct: (t.pct / total) * 100,
-    color: t.color,
-  }));
   return (
     <Card>
       <div className="flex h-full flex-col">
         <CardHeading
           title="What kind of bracketing?"
-          subtitle="Size = same style, different sizes. Color = same style, different colors."
+          subtitle="Same style bought together in 2+ sizes, 2+ colors, or both."
         />
         <div className="flex flex-1 flex-col items-center justify-center gap-5 py-4 sm:flex-row">
-          <Donut segments={arcs} centerTop={BRACKETED_TOTAL} centerBottom="orders" />
+          <Donut segments={TYPE_BREAKDOWN} centerTop={BRACKETED_TOTAL} centerBottom="orders" />
           <ul className="flex min-w-0 flex-1 flex-col gap-2">
             {TYPE_BREAKDOWN.map((t) => (
               <li key={t.label} className="flex items-center gap-2 text-sm">
@@ -205,7 +195,7 @@ function TypeBreakdown() {
           </ul>
         </div>
         <p className="text-[11px] leading-4 text-neutral-600">
-          Orders can be bracketed on both size and color, so shares add to more than 100%.
+          Each bracketed order counts once — size only, color only, or both.
         </p>
       </div>
     </Card>

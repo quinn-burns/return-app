@@ -17,14 +17,21 @@ const BRACKETING_DEF =
 
 /* Headline KPIs — the one number each area leads with, pulled together so the
    whole customer picture reads in one row. */
-type Kpi = { label: string; value: string; sub: string; info?: string; risk?: boolean };
+/* `tone` colors the big number: green when a higher value is good, red when it's
+   bad, neutral otherwise — the universal good/bad read. */
+type Tone = "good" | "bad";
+type Kpi = { label: string; value: string; sub: string; info?: string; tone?: Tone };
 const KPIS: Kpi[] = [
-  { label: "Return Rate", value: "14.76%", sub: "of items returned", info: "Share of shipped items returned, rolling 12 months." },
-  { label: "Repurchase Rate", value: "28.4%", sub: "buy a second time", info: "Share of customers who place a second order." },
-  { label: "Net Rev / Customer", value: "$440", sub: "lifetime, after returns", info: "Lifetime net revenue per customer, after returns." },
-  { label: "% Orders Bracketed", value: "8.46%", sub: "of all orders", info: "Orders with multiple sizes or colors of one style." },
-  { label: "Same-Style Exchange Rate", value: "4.4%", sub: "of returns recovered", info: "Returns saved as a same-style swap rather than a refund." },
+  { label: "Return Rate", value: "14.76%", sub: "of items returned", info: "Share of shipped items returned, rolling 12 months.", tone: "bad" },
+  { label: "Repurchase Rate", value: "28.4%", sub: "buy a second time", info: "Share of customers who place a second order.", tone: "good" },
+  { label: "Net Rev / Customer", value: "$440", sub: "lifetime, after returns", info: "Lifetime net revenue per customer, after returns.", tone: "good" },
+  { label: "% Orders Bracketed", value: "8.46%", sub: "of all orders", info: "Orders with multiple sizes or colors of one style.", tone: "bad" },
+  { label: "Same-Style Exchange Rate", value: "4.4%", sub: "of returns recovered", info: "Returns saved as a same-style swap rather than a refund.", tone: "good" },
 ];
+
+/** tone → text color for a headline number. */
+const toneText = (tone?: Tone) =>
+  tone === "good" ? "text-success-600" : tone === "bad" ? "text-danger-600" : "text-neutral-800";
 
 /* Segments summary — the at-risk groups, listed (they overlap, so not summed). */
 const SEGMENTS = [
@@ -34,12 +41,12 @@ const SEGMENTS = [
   { name: "Likely resellers", count: "1,947", revenue: "$743K", rate: "59.7% return" },
 ];
 
-/* Bracketing summary. Shares overlap (an order can bracket on both), so the ring
-   is normalized while the legend keeps the true per-dimension percentages. */
+/* Bracketing summary. A mutually-exclusive split of bracketed orders — size
+   only, color only, or both — so the ring reads honestly and sums to 100%. */
 const BRK_TYPES = [
-  { label: "Size", pct: 65, color: "#4169e1" },
-  { label: "Color", pct: 51, color: "#27cba7" },
-  { label: "Other", pct: 2, color: "#ababab" },
+  { label: "Size only", pct: 55, color: "#4169e1" },
+  { label: "Color only", pct: 33, color: "#27cba7" },
+  { label: "Both", pct: 12, color: "#8b5cf6" },
 ];
 
 /* Exchange summary. */
@@ -49,12 +56,13 @@ const EXCH_OUTCOME = [
 ];
 
 /* Customer Value summary — the new-customer lens, so it doesn't repeat the
-   overall repurchase/net-rev headlines already in the KPI row. */
-const VALUE = [
-  { label: "New-Cust. Repurchase", value: "22%", sub: "2nd order ≤ 12 mo", info: "New customers who buy again within a year." },
-  { label: "New-Cust. Net Rev", value: "$403", sub: "first 12 months", info: "Net revenue from a new customer in their first year." },
-  { label: "Repeat within 90 days", value: "12.1%", sub: "of first-time buyers", info: "First-time buyers who return for a second order within 90 days." },
-  { label: "Avg Orders / Customer", value: "2.4", sub: "lifetime", info: "Average lifetime orders per customer." },
+   overall repurchase/net-rev headlines already in the KPI row. All are
+   value-building metrics where higher is better, so they read green. */
+const VALUE: { label: string; value: string; sub: string; info: string; tone?: Tone }[] = [
+  { label: "New-Cust. Repurchase", value: "22%", sub: "2nd order ≤ 12 mo", info: "New customers who buy again within a year.", tone: "good" },
+  { label: "New-Cust. Net Rev", value: "$403", sub: "first 12 months", info: "Net revenue from a new customer in their first year.", tone: "good" },
+  { label: "Repeat within 90 days", value: "12.1%", sub: "of first-time buyers", info: "First-time buyers who return for a second order within 90 days.", tone: "good" },
+  { label: "Avg Orders / Customer", value: "2.4", sub: "lifetime", info: "Average lifetime orders per customer.", tone: "good" },
 ];
 
 /* Customer Journey summary — the biggest sequences across the whole journey. */
@@ -153,7 +161,7 @@ function MoneyBar({ onGo }: { onGo: (tab: string, anchor: string) => void }) {
             <span className="size-2 rounded-full bg-brand-teal" />
             Money to gain
           </p>
-          <p className="mt-1.5 text-[44px] font-bold leading-none text-neutral-800">{RECOVERABLE_TOTAL}</p>
+          <p className="mt-1.5 text-[44px] font-bold leading-none text-success-600">{RECOVERABLE_TOTAL}</p>
           <p className="mt-2 text-xs text-neutral-600">
             Recoverable across bracketing and exchange — a total that exists only by summing both.
           </p>
@@ -255,7 +263,7 @@ function KpiRow() {
             {k.label}
             {k.info ? <InfoTip label={k.label} text={k.info} /> : null}
           </p>
-          <p className={`text-[28px] font-bold leading-[34px] ${k.risk ? "text-danger-600" : "text-neutral-800"}`}>
+          <p className={`text-[28px] font-bold leading-[34px] ${toneText(k.tone)}`}>
             {k.value}
           </p>
           <p className="text-[11px] text-neutral-600">{k.sub}</p>
@@ -282,7 +290,7 @@ function CustomerValueSummary() {
               {v.label}
               <InfoTip label={v.label} text={v.info} />
             </p>
-            <p className="text-2xl font-bold text-neutral-800">{v.value}</p>
+            <p className={`text-2xl font-bold ${toneText(v.tone)}`}>{v.value}</p>
             <p className="text-[11px] text-neutral-600">{v.sub}</p>
           </div>
         ))}
@@ -345,8 +353,6 @@ function SegmentsSummary({ onGo }: { onGo: (tab: string, anchor: string) => void
 
 /** Bracketing summary. */
 function BracketingSummary({ onGo }: { onGo: (tab: string, anchor: string) => void }) {
-  const totalPct = BRK_TYPES.reduce((s, t) => s + t.pct, 0);
-  const arcs = BRK_TYPES.map((t) => ({ label: t.label, pct: (t.pct / totalPct) * 100, color: t.color }));
   return (
     <AreaCard
       title="Bracketing"
@@ -363,7 +369,7 @@ function BracketingSummary({ onGo }: { onGo: (tab: string, anchor: string) => vo
           <p className="text-[11px] text-neutral-600">vs 2% for color</p>
         </div>
         <div className="flex items-center justify-center gap-4">
-          <Donut segments={arcs} centerTop="171K" centerBottom="bracketed" size={104} />
+          <Donut segments={BRK_TYPES} centerTop="171K" centerBottom="bracketed" size={104} />
           <div className="flex flex-col gap-1.5">
             {BRK_TYPES.map((t) => (
               <span key={t.label} className="flex items-center gap-2 text-xs text-neutral-700">

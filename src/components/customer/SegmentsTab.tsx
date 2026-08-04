@@ -25,7 +25,7 @@ type Segment = {
 const SEGMENTS: Segment[] = [
   {
     name: "At-Risk",
-    thresholds: "Rising return rate with repurchase probability below 30%",
+    thresholds: "Latest order shows a churn marker — a return with no exchange, a bracket returned in full, or a 50%+ lifetime return rate on 4+ items",
     summary: [
       { label: "Revenue", value: "$8.9M" },
       { label: "Return Revenue", value: "$2.4M" },
@@ -42,7 +42,7 @@ const SEGMENTS: Segment[] = [
   },
   {
     name: "High-Returning",
-    thresholds: "Return rate > 45% and ≥ 3 returns (thresholds configurable on the backend)",
+    thresholds: "Over 45% of units returned in the window, with 3+ units returned (thresholds configurable on the backend)",
     summary: [
       { label: "Revenue", value: "$10.0M" },
       { label: "Return Revenue", value: "$4.1M" },
@@ -59,7 +59,7 @@ const SEGMENTS: Segment[] = [
   },
   {
     name: "High-Potential",
-    thresholds: "Top-quartile net revenue with a return rate under 15%",
+    thresholds: "New customer who kept their whole first order, with 2+ items, 2+ categories, or a $500+ order",
     summary: [
       { label: "Revenue", value: "$12.5M" },
       { label: "Return Revenue", value: "$410K" },
@@ -76,7 +76,7 @@ const SEGMENTS: Segment[] = [
   },
   {
     name: "Unprofitable",
-    thresholds: "Lifetime return rate > 60% and ≥ 5 returns",
+    thresholds: "Lifetime return rate over 60% with 5+ returns",
     summary: [
       { label: "Revenue", value: "$5.6M" },
       { label: "Return Revenue", value: "$1.5M" },
@@ -94,7 +94,7 @@ const SEGMENTS: Segment[] = [
   },
   {
     name: "Likely Resellers",
-    thresholds: "≥ 4 styles purchased with > 3 units each of the same style ID",
+    thresholds: "4+ styles bought with more than 3 units each of the same style (lifetime)",
     summary: [
       { label: "Revenue", value: "$2.7M" },
       { label: "Return Revenue", value: "$743K" },
@@ -111,7 +111,7 @@ const SEGMENTS: Segment[] = [
   },
   {
     name: "New · return, no repurchase",
-    thresholds: "Returned all/part of first order, no additional order after 90 days",
+    thresholds: "First order returned in whole or part, with no order since",
     summary: [
       { label: "Revenue", value: "$13.2M" },
       { label: "Return Revenue", value: "$4.3M" },
@@ -128,7 +128,7 @@ const SEGMENTS: Segment[] = [
   },
   {
     name: "Existing · return, no repurchase",
-    thresholds: "Returned all/part of most recent order, no additional order after 90 days",
+    thresholds: "Most recent order returned in whole or part, with no order since",
     summary: [
       { label: "Revenue", value: "$4.4M" },
       { label: "Return Revenue", value: "$1.3M" },
@@ -145,7 +145,7 @@ const SEGMENTS: Segment[] = [
   },
   {
     name: "Same SKU Repurchase",
-    thresholds: "Returned and then repurchased the same SKU",
+    thresholds: "Returned an item, then re-bought the exact same SKU",
     summary: [
       { label: "Revenue", value: "$2.4M" },
       { label: "Return Revenue", value: "$637K" },
@@ -246,7 +246,7 @@ function summaryVal(seg: Segment, label: string): string {
   return seg.summary.find((x) => x.label === label)?.value ?? "";
 }
 
-function SegmentImpact({ segments }: { segments: Segment[] }) {
+function SegmentImpact({ segments, selected }: { segments: Segment[]; selected: string[] }) {
   const rows = segments
     .map((s) => ({
       name: s.name,
@@ -254,6 +254,7 @@ function SegmentImpact({ segments }: { segments: Segment[] }) {
       value: parseMoney(summaryVal(s, "Return Revenue")),
       customers: summaryVal(s, "Customer Count"),
       rate: summaryVal(s, "Return Rate ($)"),
+      on: selected.includes(s.name),
     }))
     .sort((a, b) => b.value - a.value);
   const max = Math.max(...rows.map((r) => r.value), 1);
@@ -261,18 +262,20 @@ function SegmentImpact({ segments }: { segments: Segment[] }) {
     <Card id="segments-impact">
       <CardHeading
         title="Return revenue at risk by segment"
-        subtitle="Selected segments ranked by the return revenue they represent."
+        subtitle="Every segment ranked by the return revenue it represents — the selected ones (highlighted) drill into the tables below."
       />
       <div className="mt-4 flex flex-col gap-3">
         {rows.map((r) => (
           <div key={r.name} className="flex items-center gap-3">
-            <span className="w-52 shrink-0 truncate text-sm font-medium text-neutral-800">
+            <span
+              className={`w-52 shrink-0 truncate text-sm ${r.on ? "font-semibold text-neutral-800" : "text-neutral-600"}`}
+            >
               {r.name}
             </span>
             <div className="h-5 min-w-0 flex-1 overflow-hidden rounded-[4px] bg-neutral-100">
               <div
                 data-anim-bar
-                className="h-5 rounded-[4px] bg-primary-600"
+                className={`h-5 rounded-[4px] ${r.on ? "bg-primary-600" : "bg-primary-200"}`}
                 style={{ width: `${(r.value / max) * 100}%` }}
               />
             </div>
@@ -287,9 +290,74 @@ function SegmentImpact({ segments }: { segments: Segment[] }) {
   );
 }
 
+/** Which customer field a column sorts on, and how to read its value. */
+type ColKey = "id" | "revenue" | "returnRevenue";
+const SORT_VAL: Record<ColKey, (c: Customer) => number | string> = {
+  id: (c) => c.id,
+  revenue: (c) => parseMoney(c.revenue),
+  returnRevenue: (c) => parseMoney(c.returnRevenue),
+};
+
+function SortHeader({
+  label,
+  col,
+  sort,
+  onSort,
+  align = "left",
+}: {
+  label: string;
+  col: ColKey;
+  sort: { key: ColKey; dir: "asc" | "desc" } | null;
+  onSort: (col: ColKey) => void;
+  align?: "left" | "right";
+}) {
+  const active = sort?.key === col;
+  return (
+    <th className={`whitespace-nowrap px-3 py-2 font-normal ${align === "right" ? "text-right" : ""}`}>
+      <button
+        type="button"
+        onClick={() => onSort(col)}
+        className={`inline-flex items-center gap-1 ${align === "right" ? "flex-row-reverse" : ""} ${
+          active ? "font-semibold text-neutral-800" : "text-neutral-600 hover:text-neutral-800"
+        }`}
+      >
+        {label}
+        <span className={`text-[9px] leading-none ${active ? "text-primary-600" : "text-neutral-300"}`}>
+          {active ? (sort!.dir === "asc" ? "▲" : "▼") : "▼"}
+        </span>
+      </button>
+    </th>
+  );
+}
+
 function SegmentSection({ segment }: { segment: Segment }) {
   const showToast = useExportToast();
-  const { slice, page, setPage, total, pageSize } = usePaged(padCustomers(segment), 5);
+  const [sort, setSort] = useState<{ key: ColKey; dir: "asc" | "desc" } | null>(null);
+
+  const rows = padCustomers(segment);
+  const sorted = sort
+    ? [...rows].sort((a, b) => {
+        const av = SORT_VAL[sort.key](a);
+        const bv = SORT_VAL[sort.key](b);
+        const cmp =
+          typeof av === "string" && typeof bv === "string"
+            ? av.localeCompare(bv)
+            : (av as number) - (bv as number);
+        return sort.dir === "asc" ? cmp : -cmp;
+      })
+    : rows;
+
+  const { slice, page, setPage, total, pageSize } = usePaged(sorted, 5);
+  // A money column reads most useful highest-first; the ID column lowest-first.
+  const onSort = (key: ColKey) => {
+    setSort((prev) =>
+      prev?.key === key
+        ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: key === "id" ? "asc" : "desc" },
+    );
+    setPage(0);
+  };
+
   return (
     <Card>
       <div className="flex items-start justify-between gap-3">
@@ -305,12 +373,12 @@ function SegmentSection({ segment }: { segment: Segment }) {
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead>
-            <tr className="border-b border-neutral-200 text-[11px] text-neutral-600 [text-wrap:balance]">
-              <th className="whitespace-nowrap py-2 pr-3 font-normal">Customer ID</th>
-              <th className="whitespace-nowrap px-3 py-2 text-right font-normal">Revenue</th>
-              <th className="whitespace-nowrap px-3 py-2 text-right font-normal">Return Revenue</th>
-              <th className="whitespace-nowrap px-3 py-2 font-normal">Units Returned by Department</th>
-              <th className="whitespace-nowrap px-3 py-2 font-normal">Units Returned by Item</th>
+            <tr className="border-b border-neutral-200 text-[11px] [text-wrap:balance]">
+              <SortHeader label="Customer ID" col="id" sort={sort} onSort={onSort} />
+              <SortHeader label="Revenue" col="revenue" sort={sort} onSort={onSort} align="right" />
+              <SortHeader label="Return Revenue" col="returnRevenue" sort={sort} onSort={onSort} align="right" />
+              <th className="whitespace-nowrap px-3 py-2 font-normal text-neutral-600">Units Returned by Department</th>
+              <th className="whitespace-nowrap px-3 py-2 font-normal text-neutral-600">Units Returned by Item</th>
             </tr>
           </thead>
           <tbody>
@@ -373,24 +441,29 @@ export default function SegmentsTab() {
   const shown = SEGMENTS.filter((s) => selected.includes(s.name));
   return (
     <ExportToastProvider>
-      <div className="flex flex-wrap items-end gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <label className="flex flex-col gap-1 text-xs text-neutral-600">
-          Segments
+          Segments to drill into
           <SegmentSelect selected={selected} onToggle={toggle} />
         </label>
+        <p className="flex items-center gap-1.5 pb-1 text-xs text-neutral-500">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="#8a8a8a" strokeWidth="1.6" />
+            <path d="M12 11v5M12 8h.01" stroke="#8a8a8a" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+          Segments overlap — a customer can appear in more than one.
+        </p>
       </div>
+      {/* Big picture first: every segment ranked, always visible. */}
+      <SegmentImpact segments={SEGMENTS} selected={selected} />
+      <RecommendedActions context="Segments" items={SEG_RECS} />
+      {/* Drill-down: the selected segments' tables. */}
       {shown.length === 0 ? (
-        <Card className="flex min-h-[160px] items-center justify-center text-sm text-neutral-600">
-          Select at least one segment to display.
+        <Card className="flex min-h-[120px] items-center justify-center text-sm text-neutral-600">
+          Select at least one segment above to drill into its customers.
         </Card>
       ) : (
-        <>
-          {shown.length > 1 ? <SegmentImpact segments={shown} /> : null}
-          <RecommendedActions context="Segments" items={SEG_RECS} />
-          {shown.map((s) => (
-            <SegmentSection key={s.name} segment={s} />
-          ))}
-        </>
+        shown.map((s) => <SegmentSection key={s.name} segment={s} />)
       )}
     </ExportToastProvider>
   );

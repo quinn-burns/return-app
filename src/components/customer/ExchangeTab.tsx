@@ -26,29 +26,25 @@ const KPIS = [
   { label: "% Returns Exchanged on Color", sub: "Of returns", value: "0.93%" },
 ];
 
+// A mutually-exclusive split of exchanges by what the replacement changed —
+// size only, color only, or both — so the ring sums to 100%. Same three
+// categories and colors as the "What kind of bracketing?" donut.
 const KIND = [
-  // Matches the "What kind of bracketing?" donut on the Bracketing tab.
-  // Primary blue + brand teal, matching the Bracketing donut.
-  { label: "Size", pct: 58, color: "#4169e1" },
-  { label: "Color", pct: 21, color: "#27cba7" },
+  { label: "Size", pct: 66, color: "#4169e1" },
+  { label: "Color", pct: 24, color: "#27cba7" },
+  { label: "Both", pct: 10, color: "#8b5cf6" },
 ];
 
-const COME_BACK = [
-  { style: "Triumph 23", pct: 81.82, detail: "180 of 220 exch." },
-  { style: "Endorphin Speed 5", pct: 76.68, detail: "342 of 446 exch." },
-  { style: "Endorphin Azura", pct: 62.32, detail: "43 of 69 exch." },
-  { style: "Progrid Omni 9", pct: 50.94, detail: "81 of 159 exch." },
-  { style: "Endorphin Elite 2", pct: 42.04, detail: "132 of 314 exch." },
+// Does the replacement stick? Share kept vs returned a second time, split by
+// what the exchange changed. Weighted by KIND this averages to the 67% overall.
+const STICK_KIND = [
+  { label: "Size", kept: 64, returned: 36 },
+  { label: "Color", kept: 76, returned: 24 },
+  { label: "Both", kept: 55, returned: 45 },
 ];
-
-// Where the exchange doesn't stick: categories with the highest re-return rate
-// (the swapped item came back a second time), worst first.
-const NOT_STICKING = [
-  { dept: "Flame Resistant", pct: 100.0, detail: "3 of 3 exch." },
-  { dept: "Lowdown", pct: 57.1, detail: "8 of 14 exch." },
-  { dept: "Mid Layers", pct: 50.0, detail: "4 of 8 exch." },
-  { dept: "Performance Tops", pct: 50.0, detail: "6 of 12 exch." },
-  { dept: "Outerwear", pct: 30.8, detail: "8 of 26 exch." },
+const STICK_LEGEND = [
+  { label: "Kept", color: "#059467" },
+  { label: "Returned again", color: "#dc2828" },
 ];
 
 type PromoRow = { dept: string; revenue: string; pct: string; opportunity: string };
@@ -129,35 +125,29 @@ const IMPROVE_COLOR_ALL = padGuide(IMPROVE_COLOR, 24);
 /* --------------------------- charts ------------------------------ */
 
 function ExchangeKind() {
-  // Size and Color are independent rates (they do not sum to 100), so two pie
-  // slices would misread. Independent bars — each the share of that return type
-  // saved as a same-style exchange — are the honest, legible choice.
+  // Size / Color / Both are mutually exclusive and sum to 100%, so a donut reads
+  // honestly — the same treatment as the "What kind of bracketing?" chart.
   return (
     <Card>
       <div className="flex h-full flex-col">
         <CardHeading
-          title="Of exchanges, what kind?"
-          subtitle="Size = swap to a different size. Color = swap to a different color."
+          title="What kind of exchange?"
+          subtitle="Does the replacement differ by size, color, or both?"
         />
-        <div className="flex flex-1 flex-col justify-center gap-3 py-4">
-          {KIND.map((t) => (
-            <div key={t.label} className="flex items-center gap-3">
-              <span className="w-14 shrink-0 text-sm font-medium text-neutral-800">{t.label}</span>
-              <div className="h-5 min-w-0 flex-1 overflow-hidden rounded-[4px] bg-neutral-100">
-                <div
-                  data-anim-bar
-                  className="h-5 rounded-[4px]"
-                  style={{ width: `${t.pct}%`, backgroundColor: t.color }}
-                />
-              </div>
-              <span className="w-12 shrink-0 text-right text-sm font-semibold text-neutral-800">
-                {t.pct}%
-              </span>
-            </div>
-          ))}
+        <div className="flex flex-1 flex-col items-center justify-center gap-5 py-4 sm:flex-row">
+          <Donut segments={KIND} centerTop="5K" centerBottom="exchanges" />
+          <ul className="flex min-w-0 flex-1 flex-col gap-2">
+            {KIND.map((t) => (
+              <li key={t.label} className="flex items-center gap-2 text-sm">
+                <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: t.color }} />
+                <span className="font-medium text-neutral-800">{t.label}</span>
+                <span className="text-neutral-600">— {t.pct}%</span>
+              </li>
+            ))}
+          </ul>
         </div>
         <p className="text-[11px] leading-4 text-neutral-600">
-          Share of returns saved as a same-style exchange rather than a refund.
+          Each exchange counts once — size only, color only, or both.
         </p>
       </div>
     </Card>
@@ -199,74 +189,41 @@ function ExchangeOutcome() {
   );
 }
 
-function ComeBack() {
-  const max = Math.max(...COME_BACK.map((s) => s.pct));
+function StickByKind() {
+  // Breaks the overall 67% kept / 33% returned down by what the exchange
+  // changed, so you can see which kind of swap actually holds.
   return (
     <Card>
-      <div className="flex flex-col gap-1">
-        <h2 className="text-base font-semibold text-neutral-800">Where do they come back?</h2>
-        <p className="flex flex-wrap items-center gap-1.5 text-xs text-neutral-600">
-          <span className="size-2.5 rounded-full" style={{ backgroundColor: "#4169e1" }} />
-          Breaking down the <span className="font-semibold text-neutral-700">Returned — 33%</span> ·
-          top styles, by re-return rate × volume
-        </p>
-      </div>
-      <div className="mt-3 flex flex-col gap-2">
-        {COME_BACK.map((s) => (
-          <div key={s.style} className="flex items-center gap-3">
-            {/* Style name over its exchange count, so the row stays narrow enough
-                to sit in the grid layout without crushing the bar. */}
-            <div className="w-28 shrink-0 leading-tight">
-              <div className="truncate text-[13px] font-medium text-neutral-800">{s.style}</div>
-              <div className="truncate text-[10px] text-neutral-500">{s.detail}</div>
-            </div>
-            <div className="h-3.5 min-w-0 flex-1 overflow-hidden rounded-[4px] bg-neutral-100">
-              <div
-                data-anim-bar
-                className="h-3.5 rounded-[4px] bg-primary-600"
-                style={{ width: `${(s.pct / max) * 100}%` }}
-              />
-            </div>
-            <span className="w-12 shrink-0 text-right text-xs font-semibold text-neutral-800">
-              {s.pct}%
+      <div className="flex h-full flex-col">
+        <CardHeading
+          title="Which exchanges stick?"
+          subtitle="Kept versus returned a second time, by what the replacement changed."
+        />
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+          {STICK_LEGEND.map((l) => (
+            <span key={l.label} className="flex items-center gap-1.5 text-[11px] text-neutral-600">
+              <span className="size-2.5 rounded-full" style={{ backgroundColor: l.color }} />
+              {l.label}
             </span>
-          </div>
-        ))}
-      </div>
-    </Card>
-  );
-}
-
-function NotSticking() {
-  const max = Math.max(...NOT_STICKING.map((s) => s.pct));
-  return (
-    <Card>
-      <div className="flex flex-col gap-1">
-        <h2 className="text-base font-semibold text-neutral-800">Where do exchanges not stick?</h2>
-        <p className="flex flex-wrap items-center gap-1.5 text-xs text-neutral-600">
-          <span className="size-2.5 rounded-full" style={{ backgroundColor: "#dc2828" }} />
-          Categories by re-return rate — the swapped item came back a second time
-        </p>
-      </div>
-      <div className="mt-3 flex flex-col gap-2">
-        {NOT_STICKING.map((s) => (
-          <div key={s.dept} className="flex items-center gap-3">
-            <div className="w-28 shrink-0 leading-tight">
-              <div className="truncate text-[13px] font-medium text-neutral-800">{s.dept}</div>
-              <div className="truncate text-[10px] text-neutral-500">{s.detail}</div>
+          ))}
+        </div>
+        <div className="flex flex-1 flex-col justify-center gap-4 py-4">
+          {STICK_KIND.map((t) => (
+            <div key={t.label} className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium text-neutral-800">{t.label}</span>
+                <span className="text-[11px] text-neutral-600">
+                  <span className="font-semibold text-success-600">{t.kept}% kept</span> ·{" "}
+                  {t.returned}% returned
+                </span>
+              </div>
+              <div data-anim-bar className="flex h-3 w-full overflow-hidden rounded-[4px]">
+                <span style={{ width: `${t.kept}%`, backgroundColor: STICK_LEGEND[0].color }} />
+                <span style={{ width: `${t.returned}%`, backgroundColor: STICK_LEGEND[1].color }} />
+              </div>
             </div>
-            <div className="h-3.5 min-w-0 flex-1 overflow-hidden rounded-[4px] bg-neutral-100">
-              <div
-                data-anim-bar
-                className="h-3.5 rounded-[4px] bg-danger-600"
-                style={{ width: `${(s.pct / max) * 100}%` }}
-              />
-            </div>
-            <span className="w-12 shrink-0 text-right text-xs font-semibold text-neutral-800">
-              {s.pct}%
-            </span>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </Card>
   );
@@ -403,12 +360,12 @@ export default function ExchangeTab({
       <MetricsCard>
         <KpiStrip items={KPIS} cols={4} />
       </MetricsCard>
-      {/* Four exchange charts on a 2×2 grid on a wide screen, stacked when narrow. */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      {/* Three exchange charts share one row on a wide screen and stack below it,
+          the same layout as the Bracketing tab. */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <ExchangeKind />
         <ExchangeOutcome />
-        <ComeBack />
-        <NotSticking />
+        <StickByKind />
       </div>
       <RecommendedActions context="Exchange" items={EXCH_RECS} />
       {/* Action tables pair up two-across on a wide screen, one-per-row when narrow. */}

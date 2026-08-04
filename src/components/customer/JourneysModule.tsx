@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Card, CardHeading, Pagination, TakeAction, usePaged } from "./parts";
+import { Card, CardHeading, ExportButton, Pagination, TakeAction, usePaged } from "./parts";
+import { useExportToast } from "./ExportToast";
 import { seeded } from "./filler";
 
 /* ----------------------------- model ----------------------------- */
@@ -451,6 +452,10 @@ export default function JourneysModule({
   const [metric, setMetric] = useState<Metric>("customers");
   const [sort, setSort] = useState<SortBy>("biggest");
   const [highlightKey, setHighlightKey] = useState<string | null>(null);
+  // The table is a collapsible dropdown; the export control stays in the header
+  // whether it is open or closed.
+  const [open, setOpen] = useState(false);
+  const showToast = useExportToast();
 
   const rows = useMemo(() => {
     let list = journeys;
@@ -476,6 +481,7 @@ export default function JourneysModule({
   // view that contains every journey, page to it, highlight it, and scroll it in.
   useEffect(() => {
     if (!focus) return;
+    setOpen(true);
     setPreset("all");
     setSort("biggest");
     setMetric("customers");
@@ -503,8 +509,34 @@ export default function JourneysModule({
       <CardHeading
         title="Customer journeys"
         subtitle="Every complete path from how they bracket to what they buy next, ranked."
+        action={
+          <div className="flex shrink-0 items-center gap-2">
+            <ExportButton onClick={showToast} icon />
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-expanded={open}
+              aria-label={open ? "Hide table" : "Show table"}
+              className="flex h-8 items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-0 px-2.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100"
+            >
+              {open ? "Hide" : "Show"}
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+                className={`transition-transform ${open ? "rotate-180" : ""}`}
+              >
+                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+        }
       />
 
+      {!open ? null : (
+      <>
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
         <div className="flex flex-wrap gap-1.5">
           {PRESETS.map((p) => (
@@ -629,6 +661,8 @@ export default function JourneysModule({
       <p className="mt-3 text-[11px] text-neutral-600">
         Period-on-period movement is illustrative in this prototype.
       </p>
+      </>
+      )}
     </Card>
   );
 }

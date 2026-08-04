@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Card, CardHeading, RecommendedActions, type RecItem } from "./parts";
 import JourneysModule, { buildJourneys, JourneyTreemap } from "./JourneysModule";
+import { ExportToastProvider } from "./ExportToast";
 
 /* ----------------------------- sankey ---------------------------- */
 
@@ -610,7 +611,7 @@ export default function BehavioralFlowTab() {
   const [focus, setFocus] = useState<{ key: string; n: number } | null>(null);
   const focusN = useRef(0);
   return (
-    <>
+    <ExportToastProvider>
       <RecommendedActions context="Customer Journey" items={JNY_RECS} />
       <SankeyFlow />
       <JourneyTreemap
@@ -618,6 +619,6 @@ export default function BehavioralFlowTab() {
         onFocus={(key) => setFocus({ key, n: ++focusN.current })}
       />
       <JourneysModule journeys={JOURNEYS} focus={focus} />
-    </>
+    </ExportToastProvider>
   );
 }
