@@ -281,7 +281,30 @@ export function InsightLink({ label }: { label: string }) {
   );
 }
 
-export function ExportButton({ onClick }: { onClick?: () => void }) {
+export function ExportButton({ onClick, icon = false }: { onClick?: () => void; icon?: boolean }) {
+  // Icon-only download button (bordered square). The text variant stays the
+  // default so other pages using ExportButton are unchanged.
+  if (icon) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label="Export"
+        title="Export"
+        className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-0 text-neutral-600 transition-colors hover:bg-neutral-100"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+    );
+  }
   return (
     <button
       type="button"

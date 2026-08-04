@@ -40,6 +40,16 @@ const COME_BACK = [
   { style: "Endorphin Elite 2", pct: 42.04, detail: "132 of 314 exch." },
 ];
 
+// Where the exchange doesn't stick: categories with the highest re-return rate
+// (the swapped item came back a second time), worst first.
+const NOT_STICKING = [
+  { dept: "Flame Resistant", pct: 100.0, detail: "3 of 3 exch." },
+  { dept: "Lowdown", pct: 57.1, detail: "8 of 14 exch." },
+  { dept: "Mid Layers", pct: 50.0, detail: "4 of 8 exch." },
+  { dept: "Performance Tops", pct: 50.0, detail: "6 of 12 exch." },
+  { dept: "Outerwear", pct: 30.8, detail: "8 of 26 exch." },
+];
+
 type PromoRow = { dept: string; revenue: string; pct: string; opportunity: string };
 const PROMOTE_SIZE: PromoRow[] = [
   { dept: "Light Hike", revenue: "$8.8M", pct: "3.31%", opportunity: "$15K" },
@@ -204,7 +214,7 @@ function ComeBack() {
         {COME_BACK.map((s) => (
           <div key={s.style} className="flex items-center gap-3">
             {/* Style name over its exchange count, so the row stays narrow enough
-                to sit in the three-across layout without crushing the bar. */}
+                to sit in the grid layout without crushing the bar. */}
             <div className="w-28 shrink-0 leading-tight">
               <div className="truncate text-[13px] font-medium text-neutral-800">{s.style}</div>
               <div className="truncate text-[10px] text-neutral-500">{s.detail}</div>
@@ -213,6 +223,41 @@ function ComeBack() {
               <div
                 data-anim-bar
                 className="h-3.5 rounded-[4px] bg-primary-600"
+                style={{ width: `${(s.pct / max) * 100}%` }}
+              />
+            </div>
+            <span className="w-12 shrink-0 text-right text-xs font-semibold text-neutral-800">
+              {s.pct}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function NotSticking() {
+  const max = Math.max(...NOT_STICKING.map((s) => s.pct));
+  return (
+    <Card>
+      <div className="flex flex-col gap-1">
+        <h2 className="text-base font-semibold text-neutral-800">Where do exchanges not stick?</h2>
+        <p className="flex flex-wrap items-center gap-1.5 text-xs text-neutral-600">
+          <span className="size-2.5 rounded-full" style={{ backgroundColor: "#dc2828" }} />
+          Categories by re-return rate — the swapped item came back a second time
+        </p>
+      </div>
+      <div className="mt-3 flex flex-col gap-2">
+        {NOT_STICKING.map((s) => (
+          <div key={s.dept} className="flex items-center gap-3">
+            <div className="w-28 shrink-0 leading-tight">
+              <div className="truncate text-[13px] font-medium text-neutral-800">{s.dept}</div>
+              <div className="truncate text-[10px] text-neutral-500">{s.detail}</div>
+            </div>
+            <div className="h-3.5 min-w-0 flex-1 overflow-hidden rounded-[4px] bg-neutral-100">
+              <div
+                data-anim-bar
+                className="h-3.5 rounded-[4px] bg-danger-600"
                 style={{ width: `${(s.pct / max) * 100}%` }}
               />
             </div>
@@ -356,11 +401,12 @@ export default function ExchangeTab({
       </AiInsight>
       {/* KPIs are metrics, not AI output, so they sit in their own box below. */}
       <KpiStrip items={KPIS} cols={4} />
-      {/* The three exchange charts share one row on a wide screen and stack below it. */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+      {/* Four exchange charts on a 2×2 grid on a wide screen, stacked when narrow. */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <ExchangeKind />
         <ExchangeOutcome />
         <ComeBack />
+        <NotSticking />
       </div>
       <RecommendedActions context="Exchange" items={EXCH_RECS} />
       {/* Action tables pair up two-across on a wide screen, one-per-row when narrow. */}

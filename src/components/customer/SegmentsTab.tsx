@@ -325,7 +325,7 @@ function SegmentSection({ segment }: { segment: Segment }) {
           <h2 className="text-lg font-bold text-neutral-800">{segment.name}</h2>
           <p className="text-xs text-neutral-600">{segment.thresholds}</p>
         </div>
-        <ExportButton onClick={showToast} />
+        <ExportButton onClick={showToast} icon />
       </div>
       <div className="mt-3">
         <KpiStrip items={segment.summary} cols={6} />
