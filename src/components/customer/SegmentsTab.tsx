@@ -193,6 +193,13 @@ function SegmentImpact({ segments }: { segments: Segment[] }) {
         title="Return revenue at risk by segment"
         subtitle="Every segment ranked by the return revenue it represents — the tables below break each one down."
       />
+      <p className="mt-2 flex items-center gap-1.5 text-xs text-neutral-500">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0">
+          <circle cx="12" cy="12" r="9" stroke="#8a8a8a" strokeWidth="1.6" />
+          <path d="M12 11v5M12 8h.01" stroke="#8a8a8a" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+        Segments overlap — a customer can appear in more than one.
+      </p>
       <div className="mt-4 flex flex-col gap-3">
         {rows.map((r) => (
           <div key={r.name} className="flex items-center gap-3">
@@ -362,13 +369,6 @@ const SEG_RECS: RecItem[] = [
 export default function SegmentsTab() {
   return (
     <ExportToastProvider>
-      <p className="flex items-center gap-1.5 text-xs text-neutral-500">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle cx="12" cy="12" r="9" stroke="#8a8a8a" strokeWidth="1.6" />
-          <path d="M12 11v5M12 8h.01" stroke="#8a8a8a" strokeWidth="1.8" strokeLinecap="round" />
-        </svg>
-        Segments overlap — a customer can appear in more than one.
-      </p>
       {/* Big picture first: every segment ranked. */}
       <SegmentImpact segments={SEGMENTS} />
       <RecommendedActions context="Segments" items={SEG_RECS} />
