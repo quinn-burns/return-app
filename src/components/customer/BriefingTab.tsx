@@ -46,7 +46,7 @@ const SEGMENTS = [
 const BRK_TYPES = [
   { label: "Size only", pct: 55, color: "#4169e1" },
   { label: "Color only", pct: 33, color: "#27cba7" },
-  { label: "Both", pct: 12, color: "#8b5cf6" },
+  { label: "Both", pct: 12, color: "#ababab" },
 ];
 
 /* Exchange summary. */

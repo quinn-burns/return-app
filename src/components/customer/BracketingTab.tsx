@@ -20,7 +20,7 @@ const BRACKETED_TOTAL = "171K";
 const TYPE_BREAKDOWN = [
   { label: "Size only", pct: 55, orders: "94K", color: "#4169e1" },
   { label: "Color only", pct: 33, orders: "56K", color: "#27cba7" },
-  { label: "Both", pct: 12, orders: "21K", color: "#8b5cf6" },
+  { label: "Both", pct: 12, orders: "21K", color: "#ababab" },
 ];
 
 // Profit and outcome per bracketing type, ordered best → worst profit per order.

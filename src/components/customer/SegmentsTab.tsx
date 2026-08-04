@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Card, CardHeading, ExportButton, KpiStrip, Pagination, RecommendedActions, usePaged, type RecItem } from "./parts";
 import { seeded } from "./filler";
 import { ExportToastProvider, useExportToast } from "./ExportToast";
@@ -162,77 +162,7 @@ const SEGMENTS: Segment[] = [
   },
 ];
 
-const DEFAULT_SELECTED = ["At-Risk", "High-Returning", "High-Potential"];
-
 /* --------------------------- primitives -------------------------- */
-
-function Chevron() {
-  return (
-    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true">
-      <path d="M1 1l4 4 4-4" stroke="#8a8a8a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function SegmentSelect({
-  selected,
-  onToggle,
-}: {
-  selected: string[];
-  onToggle: (name: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, [open]);
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex h-10 min-w-[190px] items-center justify-between gap-2 rounded-lg border border-neutral-200 bg-neutral-0 px-3 text-sm text-neutral-800 hover:bg-neutral-50"
-      >
-        {selected.length} of {SEGMENTS.length} segments shown
-        <Chevron />
-      </button>
-      {open ? (
-        <div className="absolute left-0 top-11 z-20 w-[320px] rounded-lg border border-neutral-200 bg-white p-1 shadow-lg">
-          {SEGMENTS.map((s) => {
-            const on = selected.includes(s.name);
-            return (
-              <button
-                key={s.name}
-                type="button"
-                onClick={() => onToggle(s.name)}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-neutral-800 hover:bg-neutral-50"
-              >
-                <span
-                  className={`flex size-[18px] shrink-0 items-center justify-center rounded-[4px] border ${
-                    on ? "border-primary-600 bg-primary-600" : "border-neutral-400 bg-white"
-                  }`}
-                >
-                  {on ? (
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                      <path d="M2.5 6.2l2.3 2.3L9.5 3.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  ) : null}
-                </span>
-                {s.name}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 
 function parseMoney(v: string): number {
   const s = v.replace(/[$,]/g, "");
@@ -246,7 +176,7 @@ function summaryVal(seg: Segment, label: string): string {
   return seg.summary.find((x) => x.label === label)?.value ?? "";
 }
 
-function SegmentImpact({ segments, selected }: { segments: Segment[]; selected: string[] }) {
+function SegmentImpact({ segments }: { segments: Segment[] }) {
   const rows = segments
     .map((s) => ({
       name: s.name,
@@ -254,7 +184,6 @@ function SegmentImpact({ segments, selected }: { segments: Segment[]; selected: 
       value: parseMoney(summaryVal(s, "Return Revenue")),
       customers: summaryVal(s, "Customer Count"),
       rate: summaryVal(s, "Return Rate ($)"),
-      on: selected.includes(s.name),
     }))
     .sort((a, b) => b.value - a.value);
   const max = Math.max(...rows.map((r) => r.value), 1);
@@ -262,20 +191,18 @@ function SegmentImpact({ segments, selected }: { segments: Segment[]; selected: 
     <Card id="segments-impact">
       <CardHeading
         title="Return revenue at risk by segment"
-        subtitle="Every segment ranked by the return revenue it represents — the selected ones (highlighted) drill into the tables below."
+        subtitle="Every segment ranked by the return revenue it represents — the tables below break each one down."
       />
       <div className="mt-4 flex flex-col gap-3">
         {rows.map((r) => (
           <div key={r.name} className="flex items-center gap-3">
-            <span
-              className={`w-52 shrink-0 truncate text-sm ${r.on ? "font-semibold text-neutral-800" : "text-neutral-600"}`}
-            >
+            <span className="w-52 shrink-0 truncate text-sm font-medium text-neutral-800">
               {r.name}
             </span>
             <div className="h-5 min-w-0 flex-1 overflow-hidden rounded-[4px] bg-neutral-100">
               <div
                 data-anim-bar
-                className={`h-5 rounded-[4px] ${r.on ? "bg-primary-600" : "bg-primary-200"}`}
+                className="h-5 rounded-[4px] bg-primary-600"
                 style={{ width: `${(r.value / max) * 100}%` }}
               />
             </div>
@@ -433,38 +360,22 @@ const SEG_RECS: RecItem[] = [
 ];
 
 export default function SegmentsTab() {
-  const [selected, setSelected] = useState<string[]>(DEFAULT_SELECTED);
-  const toggle = (name: string) =>
-    setSelected((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
-    );
-  const shown = SEGMENTS.filter((s) => selected.includes(s.name));
   return (
     <ExportToastProvider>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <label className="flex flex-col gap-1 text-xs text-neutral-600">
-          Segments to drill into
-          <SegmentSelect selected={selected} onToggle={toggle} />
-        </label>
-        <p className="flex items-center gap-1.5 pb-1 text-xs text-neutral-500">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="9" stroke="#8a8a8a" strokeWidth="1.6" />
-            <path d="M12 11v5M12 8h.01" stroke="#8a8a8a" strokeWidth="1.8" strokeLinecap="round" />
-          </svg>
-          Segments overlap — a customer can appear in more than one.
-        </p>
-      </div>
-      {/* Big picture first: every segment ranked, always visible. */}
-      <SegmentImpact segments={SEGMENTS} selected={selected} />
+      <p className="flex items-center gap-1.5 text-xs text-neutral-500">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" stroke="#8a8a8a" strokeWidth="1.6" />
+          <path d="M12 11v5M12 8h.01" stroke="#8a8a8a" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+        Segments overlap — a customer can appear in more than one.
+      </p>
+      {/* Big picture first: every segment ranked. */}
+      <SegmentImpact segments={SEGMENTS} />
       <RecommendedActions context="Segments" items={SEG_RECS} />
-      {/* Drill-down: the selected segments' tables. */}
-      {shown.length === 0 ? (
-        <Card className="flex min-h-[120px] items-center justify-center text-sm text-neutral-600">
-          Select at least one segment above to drill into its customers.
-        </Card>
-      ) : (
-        shown.map((s) => <SegmentSection key={s.name} segment={s} />)
-      )}
+      {/* Drill-down: every segment's customers. */}
+      {SEGMENTS.map((s) => (
+        <SegmentSection key={s.name} segment={s} />
+      ))}
     </ExportToastProvider>
   );
 }

@@ -32,7 +32,7 @@ const KPIS = [
 const KIND = [
   { label: "Size", pct: 66, color: "#4169e1" },
   { label: "Color", pct: 24, color: "#27cba7" },
-  { label: "Both", pct: 10, color: "#8b5cf6" },
+  { label: "Both", pct: 10, color: "#ababab" },
 ];
 
 // Does the replacement stick? Share kept vs returned a second time, split by
