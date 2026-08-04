@@ -30,12 +30,13 @@ const KPIS: Kpi[] = [
   { label: "Same-Style Exchange Rate", value: "4.4%", sub: "of returns recovered", info: "Returns saved as a same-style swap rather than a refund.", change: "↑ 0.5 pts vs LY", dir: "good" },
 ];
 
-/* Segments summary — the at-risk groups, listed (they overlap, so not summed). */
-const SEGMENTS = [
-  { name: "New, no repurchase", count: "1,574", revenue: "$4.3M", rate: "34.5% return" },
-  { name: "High return-rate", count: "2,503", revenue: "$4.1M", rate: "33.4% return" },
-  { name: "Unprofitable", count: "836", revenue: "$1.5M", rate: "48.0% return" },
-  { name: "Likely resellers", count: "1,947", revenue: "$743K", rate: "59.7% return" },
+/* Segments summary — the at-risk groups, listed (they overlap, so not summed).
+   For an at-risk group, a growing count is bad (red) and a shrinking one good. */
+const SEGMENTS: { name: string; count: string; revenue: string; rate: string; change: string; dir: Dir }[] = [
+  { name: "New, no repurchase", count: "1,574", revenue: "$4.3M", rate: "34.5% return", change: "↑ 210 vs LY", dir: "bad" },
+  { name: "High return-rate", count: "2,503", revenue: "$4.1M", rate: "33.4% return", change: "↓ 140 vs LY", dir: "good" },
+  { name: "Unprofitable", count: "836", revenue: "$1.5M", rate: "48.0% return", change: "↑ 62 vs LY", dir: "bad" },
+  { name: "Likely resellers", count: "1,947", revenue: "$743K", rate: "59.7% return", change: "↑ 88 vs LY", dir: "bad" },
 ];
 
 /* Bracketing summary. A mutually-exclusive split of bracketed orders — size
@@ -356,6 +357,7 @@ function SegmentsSummary({ onGo }: { onGo: (tab: string, anchor: string) => void
             <p className="text-[11px] text-neutral-600">
               {s.revenue} · {s.rate}
             </p>
+            <ChangePill change={s.change} dir={s.dir} />
           </div>
         ))}
       </div>
