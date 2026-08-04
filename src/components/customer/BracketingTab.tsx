@@ -174,11 +174,14 @@ function Card({
   );
 }
 
-function CardHeading({ title, subtitle }: { title: string; subtitle: string }) {
+function CardHeading({ title, subtitle, action }: { title: string; subtitle: string; action?: ReactNode }) {
   return (
-    <div className="flex flex-col gap-1">
-      <h2 className="text-base font-semibold text-neutral-800">{title}</h2>
-      <p className="text-xs text-neutral-600">{subtitle}</p>
+    <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-base font-semibold text-neutral-800">{title}</h2>
+        <p className="text-xs text-neutral-600">{subtitle}</p>
+      </div>
+      {action}
     </div>
   );
 }
