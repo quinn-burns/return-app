@@ -145,7 +145,6 @@ const SEGMENTS: Segment[] = [
   },
 ];
 
-const TIERS = ["All Tiers", "Platinum", "Gold", "Silver", "Member", "Non-member"];
 const DEFAULT_SELECTED = ["Unprofitable Customers", "High Return Rate Customers", "Likely Resellers"];
 
 /* --------------------------- primitives -------------------------- */
@@ -217,50 +216,6 @@ function SegmentSelect({
   );
 }
 
-function TierSelect() {
-  const [open, setOpen] = useState(false);
-  const [tier, setTier] = useState(TIERS[0]);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, [open]);
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex h-10 min-w-[150px] items-center justify-between gap-2 rounded-lg border border-neutral-200 bg-neutral-0 px-3 text-sm text-neutral-800 hover:bg-neutral-50"
-      >
-        {tier}
-        <Chevron />
-      </button>
-      {open ? (
-        <div className="absolute left-0 top-11 z-20 w-[180px] rounded-lg border border-neutral-200 bg-white p-1 shadow-lg">
-          {TIERS.map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => {
-                setTier(t);
-                setOpen(false);
-              }}
-              className={`flex w-full rounded-md px-2 py-2 text-left text-sm hover:bg-neutral-50 ${
-                t === tier ? "font-medium text-primary-600" : "text-neutral-800"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
 
 function parseMoney(v: string): number {
   const s = v.replace(/[$,]/g, "");
@@ -405,10 +360,6 @@ export default function SegmentsTab() {
         <label className="flex flex-col gap-1 text-xs text-neutral-600">
           Segments
           <SegmentSelect selected={selected} onToggle={toggle} />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-neutral-600">
-          Loyalty Tier
-          <TierSelect />
         </label>
       </div>
       {shown.length === 0 ? (
