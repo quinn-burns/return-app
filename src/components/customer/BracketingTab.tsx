@@ -1,8 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { AiInsight, Donut, MetricsCard, Pagination, RecommendedActions, TakeAction, usePaged, useReveal, type RecItem } from "./parts";
-import { FILLER_DEPTS, countStr, money, pctStr, seeded } from "./filler";
+import { FILLER_DEPTS, money, pctStr, seeded } from "./filler";
 
 type Trend = "down" | "up" | "flat";
 const KPIS: { label: string; value: string; change: string; trend: Trend }[] = [
@@ -47,11 +47,12 @@ const REC_META: Record<Rec, { label: string; tone: "good" | "warn" | "bad" }> = 
   imgColor: { label: "Improve image color", tone: "warn" },
 };
 
-// One row per department, tagged with the recommendation its economics imply, so
-// a single Size table and a single Color table carry allow / discourage /
-// guidance together — the client's split — instead of four separate tables.
+// One row per department or style, tagged with the recommendation its economics
+// imply. `name` holds the row's label — a category at the Category grain, a
+// product at the Style grain — so one Size table and one Color table can each
+// flip between the two grains in place.
 type BrkRow = {
-  dept: string;
+  name: string;
   revenue: string;
   pct: string;
   returned: string;
@@ -61,48 +62,76 @@ type BrkRow = {
   opportunity: string;
 };
 
+// Category grain — one row per product department.
 const SIZE_BASE: BrkRow[] = [
-  { dept: "Steel Toe", revenue: "$8.0M", pct: "4.05%", returned: "9%", delta: "+$95", positive: true, rec: "allowSize", opportunity: "$18K" },
-  { dept: "Soft Toe", revenue: "$13.8M", pct: "6.47%", returned: "11%", delta: "+$54", positive: true, rec: "allowSize", opportunity: "$17K" },
-  { dept: "Composite Toe", revenue: "$12.1M", pct: "4.27%", returned: "8%", delta: "+$73", positive: true, rec: "allowSize", opportunity: "$15K" },
-  { dept: "Originals", revenue: "$3.3M", pct: "3.99%", returned: "31%", delta: "−$14", positive: false, rec: "sizeGuide", opportunity: "$692" },
-  { dept: "Light Hike", revenue: "$6.1M", pct: "4.87%", returned: "24%", delta: "−$22", positive: false, rec: "discSize", opportunity: "$2K" },
-  { dept: "Trail Running", revenue: "$1.3M", pct: "4.13%", returned: "27%", delta: "−$28", positive: false, rec: "discSize", opportunity: "$587" },
+  { name: "Steel Toe", revenue: "$8.0M", pct: "4.05%", returned: "9%", delta: "+$95", positive: true, rec: "allowSize", opportunity: "$18K" },
+  { name: "Soft Toe", revenue: "$13.8M", pct: "6.47%", returned: "11%", delta: "+$54", positive: true, rec: "allowSize", opportunity: "$17K" },
+  { name: "Composite Toe", revenue: "$12.1M", pct: "4.27%", returned: "8%", delta: "+$73", positive: true, rec: "allowSize", opportunity: "$15K" },
+  { name: "Originals", revenue: "$3.3M", pct: "3.99%", returned: "31%", delta: "−$14", positive: false, rec: "sizeGuide", opportunity: "$692" },
+  { name: "Light Hike", revenue: "$6.1M", pct: "4.87%", returned: "24%", delta: "−$22", positive: false, rec: "discSize", opportunity: "$2K" },
+  { name: "Trail Running", revenue: "$1.3M", pct: "4.13%", returned: "27%", delta: "−$28", positive: false, rec: "discSize", opportunity: "$587" },
 ];
 const COLOR_BASE: BrkRow[] = [
-  { dept: "Running", revenue: "$46.4M", pct: "3.63%", returned: "2%", delta: "+$88", positive: true, rec: "promoteColor", opportunity: "$48K" },
-  { dept: "Casual", revenue: "$28.0M", pct: "5.53%", returned: "3%", delta: "+$49", positive: true, rec: "promoteColor", opportunity: "$39K" },
-  { dept: "Light Hike", revenue: "$46.1M", pct: "3.38%", returned: "2%", delta: "+$40", positive: true, rec: "promoteColor", opportunity: "$24K" },
-  { dept: "Lowdown", revenue: "$182K", pct: "2.6%", returned: "14%", delta: "+$8", positive: true, rec: "imgColor", opportunity: "$5K" },
-  { dept: "Performance Tops", revenue: "$11K", pct: "1.9%", returned: "12%", delta: "+$12", positive: true, rec: "imgColor", opportunity: "$733" },
+  { name: "Running", revenue: "$46.4M", pct: "3.63%", returned: "2%", delta: "+$88", positive: true, rec: "promoteColor", opportunity: "$48K" },
+  { name: "Casual", revenue: "$28.0M", pct: "5.53%", returned: "3%", delta: "+$49", positive: true, rec: "promoteColor", opportunity: "$39K" },
+  { name: "Light Hike", revenue: "$46.1M", pct: "3.38%", returned: "2%", delta: "+$40", positive: true, rec: "promoteColor", opportunity: "$24K" },
+  { name: "Lowdown", revenue: "$182K", pct: "2.6%", returned: "14%", delta: "+$8", positive: true, rec: "imgColor", opportunity: "$5K" },
+  { name: "Performance Tops", revenue: "$11K", pct: "1.9%", returned: "12%", delta: "+$12", positive: true, rec: "imgColor", opportunity: "$733" },
+];
+
+// Style grain — one row per product. Same columns, drilled down from category.
+const SIZE_STYLE_BASE: BrkRow[] = [
+  { name: "Moab 3 Mid WP", revenue: "$2.1M", pct: "6.9%", returned: "8%", delta: "+$61", positive: true, rec: "allowSize", opportunity: "$9K" },
+  { name: 'Threshold Steel Toe 6"', revenue: "$1.8M", pct: "5.4%", returned: "10%", delta: "+$48", positive: true, rec: "allowSize", opportunity: "$7K" },
+  { name: "Ride 17", revenue: "$1.2M", pct: "5.1%", returned: "29%", delta: "−$18", positive: false, rec: "sizeGuide", opportunity: "$4K" },
+  { name: "Overpass Mid", revenue: "$740K", pct: "4.6%", returned: "33%", delta: "−$26", positive: false, rec: "discSize", opportunity: "$3K" },
+  { name: "Peregrine 14", revenue: "$980K", pct: "5.8%", returned: "27%", delta: "−$12", positive: false, rec: "sizeGuide", opportunity: "$2K" },
+  { name: "Z/Cloud", revenue: "$610K", pct: "4.2%", returned: "9%", delta: "+$37", positive: true, rec: "allowSize", opportunity: "$2K" },
+];
+const COLOR_STYLE_BASE: BrkRow[] = [
+  { name: "Jungle Moc", revenue: "$3.4M", pct: "3.9%", returned: "2%", delta: "+$52", positive: true, rec: "promoteColor", opportunity: "$14K" },
+  { name: "Kinvara 15", revenue: "$2.6M", pct: "3.2%", returned: "3%", delta: "+$44", positive: true, rec: "promoteColor", opportunity: "$11K" },
+  { name: "Z/1 Classic", revenue: "$2.9M", pct: "4.1%", returned: "2%", delta: "+$39", positive: true, rec: "promoteColor", opportunity: "$9K" },
+  { name: "Cloud Vista", revenue: "$420K", pct: "2.8%", returned: "13%", delta: "+$9", positive: true, rec: "imgColor", opportunity: "$4K" },
+  { name: "Hydro Moc", revenue: "$180K", pct: "2.2%", returned: "12%", delta: "+$11", positive: true, rec: "imgColor", opportunity: "$1K" },
+];
+
+// Style names used to pad the Style grain out to full pages.
+const FILLER_STYLES = [
+  "Moab Speed 2", "Trail Glove 7", "Cohesion 16", "Guide 17", "Excursion TR16", "Nova 3",
+  "Speedgoat 6", "Accentor 3", "Z/2 Classic", "Chillos Slide", "Floatride Energy", "Endorphin Shift 3",
+  "Agility Peak 5", "Antora 3", "Bravada 2", "Thermo Chill", "Ridgeline", "Forsake Range",
+  "Cloudline", "Wilderness Boot",
 ];
 
 /** Pads a dimension's table with deterministic rows so pagination has real pages. */
-function padBrk(base: BrkRow[], count: number, dimension: "size" | "color"): BrkRow[] {
+function padBrk(base: BrkRow[], count: number, dimension: "size" | "color", names: string[] = FILLER_DEPTS): BrkRow[] {
   const out = [...base];
-  for (const dept of FILLER_DEPTS) {
+  for (const name of names) {
     if (out.length >= count) break;
-    if (out.some((r) => r.dept === dept)) continue;
-    const d = Math.round(seeded(dept, 3, 8, 95));
-    const positive = seeded(dept, 6, 0, 1) > (dimension === "color" ? 0.2 : 0.45);
+    if (out.some((r) => r.name === name)) continue;
+    const d = Math.round(seeded(name, 3, 8, 95));
+    const positive = seeded(name, 6, 0, 1) > (dimension === "color" ? 0.2 : 0.45);
     const rec: Rec = positive
       ? dimension === "color" ? "promoteColor" : "allowSize"
       : dimension === "color" ? "imgColor" : "discSize";
     out.push({
-      dept,
-      revenue: money(seeded(dept, 1, 3e5, 4e7)),
-      pct: pctStr(seeded(dept, 2, 1.2, 8.4)),
-      returned: pctStr(seeded(dept, 7, 2, 34)),
+      name,
+      revenue: money(seeded(name, 1, 3e5, 4e7)),
+      pct: pctStr(seeded(name, 2, 1.2, 8.4)),
+      returned: pctStr(seeded(name, 7, 2, 34)),
       delta: `${positive ? "+" : "−"}$${d}`,
       positive,
       rec,
-      opportunity: money(seeded(dept, 5, 200, 42000)),
+      opportunity: money(seeded(name, 5, 200, 42000)),
     });
   }
   return out;
 }
-const SIZE_ROWS = padBrk(SIZE_BASE, 22, "size");
-const COLOR_ROWS = padBrk(COLOR_BASE, 22, "color");
+const SIZE_CAT_ROWS = padBrk(SIZE_BASE, 22, "size");
+const COLOR_CAT_ROWS = padBrk(COLOR_BASE, 22, "color");
+const SIZE_STYLE_ROWS = padBrk(SIZE_STYLE_BASE, 22, "size", FILLER_STYLES);
+const COLOR_STYLE_ROWS = padBrk(COLOR_STYLE_BASE, 22, "color", FILLER_STYLES);
 
 /* --------------------------- primitives -------------------------- */
 
@@ -315,28 +344,64 @@ function RecBadge({ rec }: { rec: Rec }) {
   );
 }
 
+type Grain = "category" | "style";
+
+/** Two-pill switch that flips a table between the Category and Style grains. */
+function GrainToggle({ grain, onChange }: { grain: Grain; onChange: (g: Grain) => void }) {
+  const opts: { id: Grain; label: string }[] = [
+    { id: "category", label: "By Category" },
+    { id: "style", label: "By Style" },
+  ];
+  return (
+    <div className="flex shrink-0 rounded-lg border border-neutral-200 p-0.5">
+      {opts.map((o) => (
+        <button
+          key={o.id}
+          type="button"
+          onClick={() => onChange(o.id)}
+          className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+            grain === o.id ? "bg-primary-600 text-neutral-0" : "text-neutral-600 hover:bg-neutral-100"
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function BrkTable({
   id,
   title,
   subtitle,
   pctLabel,
-  rows,
+  catRows,
+  styleRows,
 }: {
   id: string;
   title: string;
   subtitle: string;
   pctLabel: string;
-  rows: BrkRow[];
+  catRows: BrkRow[];
+  styleRows: BrkRow[];
 }) {
+  const [grain, setGrain] = useState<Grain>("category");
+  const rows = grain === "category" ? catRows : styleRows;
   const { slice, page, setPage, total, pageSize } = usePaged(rows, 6);
+  const changeGrain = (g: Grain) => {
+    setGrain(g);
+    setPage(0);
+  };
   return (
     <Card id={id}>
-      <CardHeading title={title} subtitle={subtitle} />
+      <CardHeading title={title} subtitle={subtitle} action={<GrainToggle grain={grain} onChange={changeGrain} />} />
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[760px] text-left text-sm">
           <thead>
             <tr className="border-b border-neutral-200 text-[11px] text-neutral-600 [text-wrap:balance]">
-              <th className="py-2 pr-1.5 align-bottom font-normal leading-tight">Department</th>
+              <th className="py-2 pr-1.5 align-bottom font-normal leading-tight">
+                {grain === "category" ? "Department" : "Style"}
+              </th>
               <th className="px-1.5 py-2 text-right align-bottom font-normal leading-tight">Revenue</th>
               <th className="px-1.5 py-2 text-right align-bottom font-normal leading-tight">{pctLabel}</th>
               <th className="px-1.5 py-2 text-right align-bottom font-normal leading-tight">% Returned in Full</th>
@@ -348,8 +413,8 @@ function BrkTable({
           </thead>
           <tbody>
             {slice.map((r) => (
-              <tr key={r.dept} className="border-b border-primary-50 last:border-b-0">
-                <td className="whitespace-nowrap py-3 pr-1.5 font-medium text-neutral-800">{r.dept}</td>
+              <tr key={r.name} className="border-b border-primary-50 last:border-b-0">
+                <td className="whitespace-nowrap py-3 pr-1.5 font-medium text-neutral-800">{r.name}</td>
                 <td className="whitespace-nowrap px-1.5 py-3 text-right text-neutral-700">{r.revenue}</td>
                 <td className="whitespace-nowrap px-1.5 py-3 text-right text-neutral-700">{r.pct}</td>
                 <td className="whitespace-nowrap px-1.5 py-3 text-right text-neutral-700">{r.returned}</td>
@@ -363,7 +428,7 @@ function BrkTable({
                   {r.opportunity}
                 </td>
                 <td className="py-3 pl-1.5 text-right">
-                  <TakeAction context="Bracketing" department={r.dept} />
+                  <TakeAction context="Bracketing" department={r.name} />
                 </td>
               </tr>
             ))}
@@ -411,16 +476,18 @@ export default function BracketingTab({
       <BrkTable
         id="bracketing-promote-size"
         title="Size bracketing"
-        subtitle="Every department's size bracketing, with the recommendation its economics imply · R12M"
+        subtitle="Size bracketing economics and the recommendation each row implies — switch between category and style · R12M"
         pctLabel="% Brkt. on Size"
-        rows={SIZE_ROWS}
+        catRows={SIZE_CAT_ROWS}
+        styleRows={SIZE_STYLE_ROWS}
       />
       <BrkTable
         id="bracketing-promote-color"
         title="Color bracketing"
-        subtitle="Every department's color bracketing, with the recommendation its economics imply · R12M"
+        subtitle="Color bracketing economics and the recommendation each row implies — switch between category and style · R12M"
         pctLabel="% Brkt. on Color"
-        rows={COLOR_ROWS}
+        catRows={COLOR_CAT_ROWS}
+        styleRows={COLOR_STYLE_ROWS}
       />
     </>
   );
