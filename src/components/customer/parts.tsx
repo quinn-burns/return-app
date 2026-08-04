@@ -133,15 +133,14 @@ export function AiInsight({
       </div>
       {subtitle ? <p className="mt-1 text-xs text-neutral-600">{subtitle}</p> : null}
       {items ? (
-        <div className="mt-3 flex flex-col gap-2">
+        <div className="mt-3 flex flex-col gap-1.5">
           {items.map((it, i) => (
             <div
               key={i}
-              className="rounded-r-md border-l-[3px] border-primary-600 bg-primary-50 px-3 py-2.5"
+              className="rounded-r-md border-l-[3px] border-primary-600 bg-primary-50 px-3 py-2"
             >
-              <p className="w-full text-sm leading-relaxed text-neutral-700">
-                <span className="font-semibold text-neutral-800">{it.lead}</span> {it.text}
-              </p>
+              <p className="text-[13px] font-semibold leading-snug text-neutral-800">{it.lead}</p>
+              <p className="mt-0.5 text-[11px] leading-snug text-neutral-600">{it.text}</p>
             </div>
           ))}
         </div>
