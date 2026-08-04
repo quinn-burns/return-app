@@ -159,9 +159,9 @@ function CardHeading({ title, subtitle }: { title: string; subtitle: string }) {
 
 function KpiRow() {
   return (
-    <div className="grid grid-cols-2 rounded-lg border border-neutral-200 bg-neutral-0 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       {KPIS.map((kpi) => (
-        <div key={kpi.label} className="flex flex-col gap-1.5 p-4">
+        <div key={kpi.label} className="flex flex-col gap-1.5 rounded-lg border border-neutral-200 bg-neutral-0 p-4">
           <p className="text-xs text-neutral-600">{kpi.label}</p>
           <p className="text-[28px] font-bold leading-[34px] text-neutral-800">{kpi.value}</p>
           <Pill change={kpi.change} trend={kpi.trend} />

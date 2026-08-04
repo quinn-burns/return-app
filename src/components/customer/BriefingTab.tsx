@@ -228,9 +228,9 @@ function BriefingInsights() {
 /** Headline KPI row, styled like the KPI strips on the detail tabs. */
 function KpiRow() {
   return (
-    <div className="grid grid-cols-2 rounded-lg border border-neutral-200 bg-neutral-0 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       {KPIS.map((k) => (
-        <div key={k.label} className="flex flex-col gap-1.5 p-4">
+        <div key={k.label} className="flex flex-col gap-1.5 rounded-lg border border-neutral-200 bg-neutral-0 p-4">
           <p className="flex items-center gap-1 text-xs text-neutral-600">
             {k.label}
             {k.info ? <InfoTip label={k.label} text={k.info} /> : null}

@@ -187,18 +187,9 @@ export function TakeAction({ context, department }: { context: string; departmen
     <button
       type="button"
       onClick={() => open({ context, department })}
-      className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-primary-100 bg-primary-50 px-3 py-1.5 text-xs font-medium text-primary-600 transition-colors hover:border-primary-400 hover:bg-primary-100"
+      className="inline-flex items-center whitespace-nowrap rounded-lg bg-primary-600 px-3.5 py-1.5 text-xs font-medium text-neutral-0 transition-colors hover:bg-primary-700"
     >
-      Take action
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path
-          d="M5 12h14M13 6l6 6-6 6"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      Create Action
     </button>
   );
 }
@@ -384,12 +375,15 @@ export function KpiStrip({
   cols?: 4 | 5 | 6;
 }) {
   return (
-    <div className={`grid grid-cols-2 rounded-lg border border-neutral-200 bg-neutral-0 ${COLS[cols]}`}>
+    <div className={`grid grid-cols-2 gap-3 ${COLS[cols]}`}>
       {items.map((kpi) => (
-        <div key={kpi.label} className="flex flex-col gap-1 p-4">
+        <div
+          key={kpi.label}
+          className="flex flex-col gap-1 rounded-lg border border-neutral-200 bg-neutral-0 p-4"
+        >
           <p className="text-xs text-neutral-600">
             {kpi.label}
-            {kpi.sub ? <span className="block text-[10px] text-neutral-600">{kpi.sub}</span> : null}
+            {kpi.sub ? <span className="block text-[10px] text-neutral-500">{kpi.sub}</span> : null}
           </p>
           <p className="text-[26px] font-bold leading-[32px] text-neutral-800">{kpi.value}</p>
         </div>
