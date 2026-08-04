@@ -17,21 +17,18 @@ const BRACKETING_DEF =
 
 /* Headline KPIs — the one number each area leads with, pulled together so the
    whole customer picture reads in one row. */
-/* `tone` colors the big number: green when a higher value is good, red when it's
-   bad, neutral otherwise — the universal good/bad read. */
-type Tone = "good" | "bad";
-type Kpi = { label: string; value: string; sub: string; info?: string; tone?: Tone };
+/* The number stays black; the period-on-period change carries the good/bad read
+   as a small pill — `dir` colors the pill (good = green, bad = red, flat = gray),
+   the arrow lives in the `change` string. */
+type Dir = "good" | "bad" | "flat";
+type Kpi = { label: string; value: string; sub: string; info?: string; change: string; dir: Dir };
 const KPIS: Kpi[] = [
-  { label: "Return Rate", value: "14.76%", sub: "of items returned", info: "Share of shipped items returned, rolling 12 months.", tone: "bad" },
-  { label: "Repurchase Rate", value: "28.4%", sub: "buy a second time", info: "Share of customers who place a second order.", tone: "good" },
-  { label: "Net Rev / Customer", value: "$440", sub: "lifetime, after returns", info: "Lifetime net revenue per customer, after returns.", tone: "good" },
-  { label: "% Orders Bracketed", value: "8.46%", sub: "of all orders", info: "Orders with multiple sizes or colors of one style.", tone: "bad" },
-  { label: "Same-Style Exchange Rate", value: "4.4%", sub: "of returns recovered", info: "Returns saved as a same-style swap rather than a refund.", tone: "good" },
+  { label: "Return Rate", value: "14.76%", sub: "of items returned", info: "Share of shipped items returned, rolling 12 months.", change: "↓ 2.0 pts vs LY", dir: "good" },
+  { label: "Repurchase Rate", value: "28.4%", sub: "buy a second time", info: "Share of customers who place a second order.", change: "↑ 1.4 pts vs LY", dir: "good" },
+  { label: "Net Rev / Customer", value: "$440", sub: "lifetime, after returns", info: "Lifetime net revenue per customer, after returns.", change: "↑ $12 vs LY", dir: "good" },
+  { label: "% Orders Bracketed", value: "8.46%", sub: "of all orders", info: "Orders with multiple sizes or colors of one style.", change: "↓ 0.0 pts vs LY", dir: "flat" },
+  { label: "Same-Style Exchange Rate", value: "4.4%", sub: "of returns recovered", info: "Returns saved as a same-style swap rather than a refund.", change: "↑ 0.5 pts vs LY", dir: "good" },
 ];
-
-/** tone → text color for a headline number. */
-const toneText = (tone?: Tone) =>
-  tone === "good" ? "text-success-600" : tone === "bad" ? "text-danger-600" : "text-neutral-800";
 
 /* Segments summary — the at-risk groups, listed (they overlap, so not summed). */
 const SEGMENTS = [
@@ -56,13 +53,12 @@ const EXCH_OUTCOME = [
 ];
 
 /* Customer Value summary — the new-customer lens, so it doesn't repeat the
-   overall repurchase/net-rev headlines already in the KPI row. All are
-   value-building metrics where higher is better, so they read green. */
-const VALUE: { label: string; value: string; sub: string; info: string; tone?: Tone }[] = [
-  { label: "New-Cust. Repurchase", value: "22%", sub: "2nd order ≤ 12 mo", info: "New customers who buy again within a year.", tone: "good" },
-  { label: "New-Cust. Net Rev", value: "$403", sub: "first 12 months", info: "Net revenue from a new customer in their first year.", tone: "good" },
-  { label: "Repeat within 90 days", value: "12.1%", sub: "of first-time buyers", info: "First-time buyers who return for a second order within 90 days.", tone: "good" },
-  { label: "Avg Orders / Customer", value: "2.4", sub: "lifetime", info: "Average lifetime orders per customer.", tone: "good" },
+   overall repurchase/net-rev headlines already in the KPI row. */
+const VALUE: { label: string; value: string; sub: string; info: string; change: string; dir: Dir }[] = [
+  { label: "New-Cust. Repurchase", value: "22%", sub: "2nd order ≤ 12 mo", info: "New customers who buy again within a year.", change: "↑ 1.1 pts vs LY", dir: "good" },
+  { label: "New-Cust. Net Rev", value: "$403", sub: "first 12 months", info: "Net revenue from a new customer in their first year.", change: "↑ $9 vs LY", dir: "good" },
+  { label: "Repeat within 90 days", value: "12.1%", sub: "of first-time buyers", info: "First-time buyers who return for a second order within 90 days.", change: "↑ 0.6 pts vs LY", dir: "good" },
+  { label: "Avg Orders / Customer", value: "2.4", sub: "lifetime", info: "Average lifetime orders per customer.", change: "↑ 0.1 vs LY", dir: "good" },
 ];
 
 /* Customer Journey summary — the biggest sequences across the whole journey. */
@@ -103,6 +99,22 @@ function DetailsLink({ onClick }: { onClick: () => void }) {
       Details
       <ArrowRight />
     </button>
+  );
+}
+
+/** Period-on-period change pill — green for a good move, red for bad, gray for
+    flat. Matches the KPI pills on the detail tabs. */
+function ChangePill({ change, dir }: { change: string; dir: Dir }) {
+  const cls =
+    dir === "good"
+      ? "bg-success-50 text-success-600"
+      : dir === "bad"
+        ? "bg-danger-50 text-danger-600"
+        : "bg-neutral-100 text-neutral-600";
+  return (
+    <span className={`flex w-fit items-center rounded-full px-2 py-[3px] text-[11px] font-medium ${cls}`}>
+      {change}
+    </span>
   );
 }
 
@@ -161,7 +173,7 @@ function MoneyBar({ onGo }: { onGo: (tab: string, anchor: string) => void }) {
             <span className="size-2 rounded-full bg-brand-teal" />
             Money to gain
           </p>
-          <p className="mt-1.5 text-[44px] font-bold leading-none text-success-600">{RECOVERABLE_TOTAL}</p>
+          <p className="mt-1.5 text-[44px] font-bold leading-none text-neutral-800">{RECOVERABLE_TOTAL}</p>
           <p className="mt-2 text-xs text-neutral-600">
             Recoverable across bracketing and exchange — a total that exists only by summing both.
           </p>
@@ -263,10 +275,9 @@ function KpiRow() {
             {k.label}
             {k.info ? <InfoTip label={k.label} text={k.info} /> : null}
           </p>
-          <p className={`text-[28px] font-bold leading-[34px] ${toneText(k.tone)}`}>
-            {k.value}
-          </p>
+          <p className="text-[28px] font-bold leading-[34px] text-neutral-800">{k.value}</p>
           <p className="text-[11px] text-neutral-600">{k.sub}</p>
+          <ChangePill change={k.change} dir={k.dir} />
         </div>
       ))}
     </div>
@@ -290,8 +301,9 @@ function CustomerValueSummary() {
               {v.label}
               <InfoTip label={v.label} text={v.info} />
             </p>
-            <p className={`text-2xl font-bold ${toneText(v.tone)}`}>{v.value}</p>
+            <p className="text-2xl font-bold text-neutral-800">{v.value}</p>
             <p className="text-[11px] text-neutral-600">{v.sub}</p>
+            <ChangePill change={v.change} dir={v.dir} />
           </div>
         ))}
       </div>
@@ -340,7 +352,7 @@ function SegmentsSummary({ onGo }: { onGo: (tab: string, anchor: string) => void
             className="flex flex-col gap-1 rounded-lg border border-neutral-200 bg-neutral-0 p-4"
           >
             <p className="text-xs text-neutral-600">{s.name}</p>
-            <p className="text-2xl font-bold leading-tight text-danger-600">{s.count}</p>
+            <p className="text-2xl font-bold leading-tight text-neutral-800">{s.count}</p>
             <p className="text-[11px] text-neutral-600">
               {s.revenue} · {s.rate}
             </p>
@@ -365,7 +377,7 @@ function BracketingSummary({ onGo }: { onGo: (tab: string, anchor: string) => vo
             Size brackets returned in full
             <InfoTip label="Size brackets returned" text="Share of size-bracketed orders where every item came back." />
           </p>
-          <p className="mt-0.5 text-2xl font-bold text-danger-600">40%</p>
+          <p className="mt-0.5 text-2xl font-bold text-neutral-800">40%</p>
           <p className="text-[11px] text-neutral-600">vs 2% for color</p>
         </div>
         <div className="flex items-center justify-center gap-4">
@@ -404,7 +416,7 @@ function ExchangeSummary({ onGo }: { onGo: (tab: string, anchor: string) => void
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-center">
         <div>
           <p className="text-xs text-neutral-600">Exchanges that stick</p>
-          <p className="mt-0.5 text-2xl font-bold text-success-600">67%</p>
+          <p className="mt-0.5 text-2xl font-bold text-neutral-800">67%</p>
           <p className="text-[11px] text-neutral-600">33% come back again</p>
         </div>
         <div className="flex items-center justify-center gap-4">
@@ -420,7 +432,7 @@ function ExchangeSummary({ onGo }: { onGo: (tab: string, anchor: string) => void
         </div>
         <div className="lg:text-right">
           <p className="text-xs text-neutral-600">Program opportunity</p>
-          <p className="mt-1 text-2xl font-bold text-success-600">$66K</p>
+          <p className="mt-1 text-2xl font-bold text-neutral-800">$66K</p>
           <p className="text-[11px] text-neutral-600">lifting capture to 5.0% of returns</p>
         </div>
       </div>
