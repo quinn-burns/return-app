@@ -112,12 +112,15 @@ export function AiInsight({
   title = "AI Insight",
   subtitle,
   footer,
+  items,
   children,
 }: {
   title?: string;
   subtitle?: ReactNode;
   footer?: ReactNode;
-  children: ReactNode;
+  /** Multiple insight rows, each a bold lead + an explaining line. */
+  items?: { lead: ReactNode; text: ReactNode }[];
+  children?: ReactNode;
 }) {
   return (
     <div className="rounded-lg border border-neutral-200 bg-neutral-0 p-4">
@@ -129,9 +132,24 @@ export function AiInsight({
         <h2 className="text-xl font-semibold text-primary-700">{title}</h2>
       </div>
       {subtitle ? <p className="mt-1 text-xs text-neutral-600">{subtitle}</p> : null}
-      <div className="mt-3 rounded-r-md border-l-[3px] border-primary-600 bg-primary-50 px-3 py-2.5">
-        <p className="w-full text-sm leading-relaxed text-neutral-700">{children}</p>
-      </div>
+      {items ? (
+        <div className="mt-3 flex flex-col gap-2">
+          {items.map((it, i) => (
+            <div
+              key={i}
+              className="rounded-r-md border-l-[3px] border-primary-600 bg-primary-50 px-3 py-2.5"
+            >
+              <p className="w-full text-sm leading-relaxed text-neutral-700">
+                <span className="font-semibold text-neutral-800">{it.lead}</span> {it.text}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-3 rounded-r-md border-l-[3px] border-primary-600 bg-primary-50 px-3 py-2.5">
+          <p className="w-full text-sm leading-relaxed text-neutral-700">{children}</p>
+        </div>
+      )}
       {footer ? <div className="mt-3">{footer}</div> : null}
       <div className="mt-3 flex items-center justify-center gap-2.5 text-xs text-neutral-600">
         Was this helpful?

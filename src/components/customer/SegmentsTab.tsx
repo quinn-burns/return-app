@@ -24,7 +24,58 @@ type Segment = {
 
 const SEGMENTS: Segment[] = [
   {
-    name: "Unprofitable Customers",
+    name: "At-Risk",
+    thresholds: "Rising return rate with repurchase probability below 30%",
+    summary: [
+      { label: "Revenue", value: "$8.9M" },
+      { label: "Return Revenue", value: "$2.4M" },
+      { label: "Net Revenue", value: "$6.5M" },
+      { label: "Items Returned", value: "22.4K" },
+      { label: "Return Rate ($)", value: "27.0%" },
+      { label: "Customer Count", value: "3,120" },
+    ],
+    customers: [
+      { id: "C-611904", revenue: "$4,930", returnRevenue: "$1,780", depts: "F Knits (5) · M Wovens (3)", items: "Chino Pant (4) · Puffer Jacket (2)" },
+      { id: "C-448120", revenue: "$3,712", returnRevenue: "$1,402", depts: "F Jeans (6) · F Shorts (2)", items: "Slim Crop Jean (5) · Linen Short (3)" },
+      { id: "C-729335", revenue: "$5,104", returnRevenue: "$1,905", depts: "M Pants (4) · F Sweaters (6)", items: "Cable Knit Sweater (4) · Henley Tee (2)" },
+    ],
+  },
+  {
+    name: "High-Returning",
+    thresholds: "Return rate > 45% and ≥ 3 returns (thresholds configurable on the backend)",
+    summary: [
+      { label: "Revenue", value: "$10.0M" },
+      { label: "Return Revenue", value: "$4.1M" },
+      { label: "Net Revenue", value: "$5.9M" },
+      { label: "Items Returned", value: "48.5K" },
+      { label: "Return Rate ($)", value: "33.4%" },
+      { label: "Customer Count", value: "2,503" },
+    ],
+    customers: [
+      { id: "C-274389", revenue: "$5,617", returnRevenue: "$2,201", depts: "M Pants (1) · F Shorts (3)", items: "Tiered Midi Dress (8) · Linen Short (5) · Cable Knit Sweater (7)" },
+      { id: "C-921414", revenue: "$4,422", returnRevenue: "$2,119", depts: "F Knits (4) · F Pants (1) · F Sweaters (9)", items: "Chino Pant (1) · Quarter-Zip Fleece (1)" },
+      { id: "C-698782", revenue: "$3,604", returnRevenue: "$2,114", depts: "M Jeans (2) · F Shorts (2) · F Pants (7)", items: "Linen Short (1) · Chino Pant (2) · Puffer Jacket (1)" },
+    ],
+  },
+  {
+    name: "High-Potential",
+    thresholds: "Top-quartile net revenue with a return rate under 15%",
+    summary: [
+      { label: "Revenue", value: "$12.5M" },
+      { label: "Return Revenue", value: "$410K" },
+      { label: "Net Revenue", value: "$12.1M" },
+      { label: "Items Returned", value: "3.2K" },
+      { label: "Return Rate ($)", value: "3.3%" },
+      { label: "Customer Count", value: "4,180" },
+    ],
+    customers: [
+      { id: "C-118273", revenue: "$6,140", returnRevenue: "$190", depts: "M Wovens (1) · F Jeans (1)", items: "Poplin Shirt (1) · Slim Crop Jean (1)" },
+      { id: "C-905612", revenue: "$5,880", returnRevenue: "$120", depts: "F Sweaters (1)", items: "Cable Knit Sweater (1)" },
+      { id: "C-334907", revenue: "$7,260", returnRevenue: "$240", depts: "F Outerwear (1) · F Knits (1)", items: "Puffer Jacket (1) · Henley Tee (1)" },
+    ],
+  },
+  {
+    name: "Unprofitable",
     thresholds: "Lifetime return rate > 60% and ≥ 5 returns",
     summary: [
       { label: "Revenue", value: "$5.6M" },
@@ -39,23 +90,6 @@ const SEGMENTS: Segment[] = [
       { id: "C-377746", revenue: "$5,556", returnRevenue: "$2,416", depts: "M Knits (7) · F Sweaters (7) · M Wovens (6)", items: "Henley Tee (2) · Puffer Jacket (1)" },
       { id: "C-407757", revenue: "$4,797", returnRevenue: "$2,314", depts: "M Wovens (5) · F Swim (9)", items: "Henley Tee (5) · Slim Crop Jean (9)" },
       { id: "C-267753", revenue: "$5,278", returnRevenue: "$2,152", depts: "F Jeans (8) · F Shorts (9) · M Pants (5)", items: "Poplin Shirt (6) · Slim Crop Jean (4)" },
-    ],
-  },
-  {
-    name: "High Return Rate Customers",
-    thresholds: "Return rate > 45% and ≥ 3 returns (thresholds configurable on the backend)",
-    summary: [
-      { label: "Revenue", value: "$10.0M" },
-      { label: "Return Revenue", value: "$4.1M" },
-      { label: "Net Revenue", value: "$5.9M" },
-      { label: "Items Returned", value: "48.5K" },
-      { label: "Return Rate ($)", value: "33.4%" },
-      { label: "Customer Count", value: "2,503" },
-    ],
-    customers: [
-      { id: "C-274389", revenue: "$5,617", returnRevenue: "$2,201", depts: "M Pants (1) · F Shorts (3)", items: "Tiered Midi Dress (8) · Linen Short (5) · Cable Knit Sweater (7)" },
-      { id: "C-921414", revenue: "$4,422", returnRevenue: "$2,119", depts: "F Knits (4) · F Pants (1) · F Sweaters (9)", items: "Chino Pant (1) · Quarter-Zip Fleece (1)" },
-      { id: "C-698782", revenue: "$3,604", returnRevenue: "$2,114", depts: "M Jeans (2) · F Shorts (2) · F Pants (7)", items: "Linen Short (1) · Chino Pant (2) · Puffer Jacket (1)" },
     ],
   },
   {
@@ -76,7 +110,7 @@ const SEGMENTS: Segment[] = [
     ],
   },
   {
-    name: "New customers: returns with no repurchase",
+    name: "New · return, no repurchase",
     thresholds: "Returned all/part of first order, no additional order after 90 days",
     summary: [
       { label: "Revenue", value: "$13.2M" },
@@ -93,7 +127,7 @@ const SEGMENTS: Segment[] = [
     ],
   },
   {
-    name: "Existing customers: returns with no repurchase",
+    name: "Existing · return, no repurchase",
     thresholds: "Returned all/part of most recent order, no additional order after 90 days",
     summary: [
       { label: "Revenue", value: "$4.4M" },
@@ -126,26 +160,9 @@ const SEGMENTS: Segment[] = [
       { id: "C-513160", revenue: "$5,900", returnRevenue: "$1,935", depts: "F Jeans (7) · F Wovens (3)", items: "Ribbed Tank (7) · Tiered Midi Dress (6) · Cable Knit Sweater (4)" },
     ],
   },
-  {
-    name: "Returns Due to Quality Issue",
-    thresholds: "≥ 2 returns flagged with reason: damaged / defective / quality (reason codes configurable on the backend)",
-    summary: [
-      { label: "Revenue", value: "$3.2M" },
-      { label: "Return Revenue", value: "$890K" },
-      { label: "Net Revenue", value: "$2.3M" },
-      { label: "Items Returned", value: "10.5K" },
-      { label: "Return Rate ($)", value: "29.5%" },
-      { label: "Customer Count", value: "512" },
-    ],
-    customers: [
-      { id: "C-771204", revenue: "$4,200", returnRevenue: "$1,650", depts: "F Dresses (3) · F Knits (2)", items: "Tiered Midi Dress (3) · Poplin Shirt (2)" },
-      { id: "C-660238", revenue: "$3,850", returnRevenue: "$1,420", depts: "M Wovens (4) · F Swim (2)", items: "Poplin Shirt (4) · Linen Short (2)" },
-      { id: "C-559871", revenue: "$2,980", returnRevenue: "$1,180", depts: "F Outerwear (2) · F Sweaters (3)", items: "Puffer Jacket (2) · Cable Knit Sweater (3)" },
-    ],
-  },
 ];
 
-const DEFAULT_SELECTED = ["Unprofitable Customers", "High Return Rate Customers", "Likely Resellers"];
+const DEFAULT_SELECTED = ["At-Risk", "High-Returning", "High-Potential"];
 
 /* --------------------------- primitives -------------------------- */
 

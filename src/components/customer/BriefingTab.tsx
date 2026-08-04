@@ -207,11 +207,36 @@ function MoneyBar({ onGo }: { onGo: (tab: string, anchor: string) => void }) {
 /** The AI read: one line that names the conflict, not a recap of the numbers. */
 function BriefingInsights() {
   return (
-    <AiInsight title="Briefing Insights">
-      Color bracketing <InfoTip label="What is bracketing?" text={BRACKETING_DEF} /> recovers the
-      most and retains best; size bracketing, its mirror, leaks the most — so treat them as one
-      decision, and scope any size-guidance rollout to size only.
-    </AiInsight>
+    <AiInsight
+      title="Briefing Insights"
+      items={[
+        {
+          lead: (
+            <>
+              Bracketing <InfoTip label="What is bracketing?" text={BRACKETING_DEF} /> pulls in
+              opposite directions.
+            </>
+          ),
+          text: "Color bracketing recovers the most and retains best, while size bracketing leaks the most — so scope any size-guidance rollout to size only, or it suppresses your best lever.",
+        },
+        {
+          lead: "Your churn and your margin leak are the same 1,574 customers.",
+          text: "New customers who return once and never come back overlap heavily with size bracketers, so one intervention can move both problems.",
+        },
+        {
+          lead: "Fewer than one return in twenty is being recovered as an exchange.",
+          text: "Each conversion moves that customer from a 41% repeat rate to 58%, so the retention gain far outweighs the modest dollar figure.",
+        },
+        {
+          lead: "Keeping the whole order is the strongest predictor of a second purchase.",
+          text: "Keep-all customers come back at 74% while full returners sit at 41% — the clearest early churn signal to act on.",
+        },
+        {
+          lead: "A returning customer is worth $440, but only 28% come back.",
+          text: "Lifting repurchase even slightly compounds across 1.7M customers, which is where the largest long-term upside sits.",
+        },
+      ]}
+    />
   );
 }
 
