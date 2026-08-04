@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardHeading, Donut, MetricsCard } from "./parts";
+import { AiInsight, Card, CardHeading, Donut, MetricsCard } from "./parts";
 
 /* ----------------------------- data ----------------------------- */
 
@@ -207,21 +207,11 @@ function MoneyBar({ onGo }: { onGo: (tab: string, anchor: string) => void }) {
 /** The AI read: one line that names the conflict, not a recap of the numbers. */
 function BriefingInsights() {
   return (
-    <section className="rounded-lg border border-primary-100 bg-primary-50 p-4">
-      <div className="flex items-center gap-1.5">
-        <span className="flex items-center justify-center rounded-full bg-gradient-to-b from-[#27cba7] to-[#0b61dd] p-[3.5px]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/overview/ai-logo.svg" alt="" className="size-[17px]" />
-        </span>
-        <h2 className="text-xl font-semibold text-primary-700">Briefing Insights</h2>
-      </div>
-      <p className="mt-1.5 text-sm leading-relaxed text-neutral-700">
-        Color bracketing{" "}
-        <InfoTip label="What is bracketing?" text={BRACKETING_DEF} /> recovers the most and retains
-        best; size bracketing, its mirror, leaks the most — so treat them as one decision, and scope
-        any size-guidance rollout to size only.
-      </p>
-    </section>
+    <AiInsight title="Briefing Insights">
+      Color bracketing <InfoTip label="What is bracketing?" text={BRACKETING_DEF} /> recovers the
+      most and retains best; size bracketing, its mirror, leaks the most — so treat them as one
+      decision, and scope any size-guidance rollout to size only.
+    </AiInsight>
   );
 }
 
