@@ -176,7 +176,10 @@ function summaryVal(seg: Segment, label: string): string {
   return seg.summary.find((x) => x.label === label)?.value ?? "";
 }
 
-function SegmentImpact({ segments }: { segments: Segment[] }) {
+/** Stable id fragment for a segment, so the chart can scroll to its row. */
+const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+function SegmentImpact({ segments, onSelect }: { segments: Segment[]; onSelect: (name: string) => void }) {
   const rows = segments
     .map((s) => ({
       name: s.name,
@@ -191,7 +194,7 @@ function SegmentImpact({ segments }: { segments: Segment[] }) {
     <Card id="segments-impact">
       <CardHeading
         title="Return revenue at risk by segment"
-        subtitle="Every segment ranked by the return revenue it represents — the tables below break each one down."
+        subtitle="Every segment ranked by the return revenue it represents — click one to open its customers below."
       />
       <p className="mt-2 flex items-center gap-1.5 text-xs text-neutral-500">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0">
@@ -200,16 +203,21 @@ function SegmentImpact({ segments }: { segments: Segment[] }) {
         </svg>
         Segments overlap — a customer can appear in more than one.
       </p>
-      <div className="mt-4 flex flex-col gap-3">
+      <div className="mt-4 flex flex-col gap-1">
         {rows.map((r) => (
-          <div key={r.name} className="flex items-center gap-3">
-            <span className="w-52 shrink-0 truncate text-sm font-medium text-neutral-800">
+          <button
+            key={r.name}
+            type="button"
+            onClick={() => onSelect(r.name)}
+            className="group flex items-center gap-3 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-neutral-50"
+          >
+            <span className="flex w-52 shrink-0 items-center gap-1 truncate text-sm font-medium text-neutral-800 group-hover:text-primary-700">
               {r.name}
             </span>
             <div className="h-5 min-w-0 flex-1 overflow-hidden rounded-[4px] bg-neutral-100">
               <div
                 data-anim-bar
-                className="h-5 rounded-[4px] bg-primary-600"
+                className="h-5 rounded-[4px] bg-primary-600 transition-colors group-hover:bg-primary-700"
                 style={{ width: `${(r.value / max) * 100}%` }}
               />
             </div>
@@ -217,7 +225,7 @@ function SegmentImpact({ segments }: { segments: Segment[] }) {
               <span className="font-semibold text-neutral-800">{r.revenue}</span> · {r.customers}{" "}
               cust · {r.rate} rate
             </span>
-          </div>
+          </button>
         ))}
       </div>
     </Card>
@@ -264,11 +272,18 @@ function SortHeader({
   );
 }
 
-function SegmentSection({ segment }: { segment: Segment }) {
+/** One accordion row: a compact always-visible summary line, expanding to the
+    segment's KPI boxes and its sortable customer table. */
+function AccordionRow({
+  segment,
+  open,
+  onToggle,
+}: {
+  segment: Segment;
+  open: boolean;
+  onToggle: () => void;
+}) {
   const showToast = useExportToast();
-  // Collapsed by default: the summary numbers are the "at a glance", and the
-  // customer table is the drill-down you open when you want it.
-  const [open, setOpen] = useState(false);
   const [sort, setSort] = useState<{ key: ColKey; dir: "asc" | "desc" } | null>(null);
 
   const rows = padCustomers(segment);
@@ -296,13 +311,13 @@ function SegmentSection({ segment }: { segment: Segment }) {
   };
 
   return (
-    <Card>
-      <div className="flex items-start justify-between gap-3">
+    <div id={`seg-${slugify(segment.name)}`} className="scroll-mt-6 border-b border-neutral-200 last:border-b-0">
+      <div className="flex items-center justify-between gap-3 py-3">
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={onToggle}
           aria-expanded={open}
-          className="group flex flex-1 items-start gap-2 text-left"
+          className="group flex min-w-0 flex-1 items-center gap-2.5 text-left"
         >
           <svg
             width="16"
@@ -310,62 +325,87 @@ function SegmentSection({ segment }: { segment: Segment }) {
             viewBox="0 0 24 24"
             fill="none"
             aria-hidden="true"
-            className={`mt-1 shrink-0 text-neutral-400 transition-transform group-hover:text-primary-600 ${open ? "" : "-rotate-90"}`}
+            className={`shrink-0 text-neutral-400 transition-transform group-hover:text-primary-600 ${open ? "" : "-rotate-90"}`}
           >
             <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <span className="flex flex-col gap-1">
-            <span className="text-lg font-bold text-neutral-800 group-hover:text-primary-700">{segment.name}</span>
-            <span className="text-xs text-neutral-600">{segment.thresholds}</span>
+          <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="text-sm font-semibold text-neutral-800 group-hover:text-primary-700">
+              {segment.name}
+            </span>
+            <span className="text-xs text-neutral-600">
+              <span className="font-semibold text-neutral-800">{summaryVal(segment, "Return Revenue")}</span>{" "}
+              return rev · {summaryVal(segment, "Customer Count")} customers ·{" "}
+              {summaryVal(segment, "Return Rate ($)")} rate
+            </span>
           </span>
         </button>
         <ExportButton onClick={showToast} icon />
       </div>
-      <div className="mt-3">
-        <KpiStrip items={segment.summary} cols={6} />
+      {open ? (
+        <div className="pb-4">
+          <p className="mb-3 text-xs text-neutral-600">{segment.thresholds}</p>
+          <KpiStrip items={segment.summary} cols={6} />
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-neutral-200 text-[11px] [text-wrap:balance]">
+                  <SortHeader label="Customer ID" col="id" sort={sort} onSort={onSort} />
+                  <SortHeader label="Revenue" col="revenue" sort={sort} onSort={onSort} align="right" />
+                  <SortHeader label="Return Revenue" col="returnRevenue" sort={sort} onSort={onSort} align="right" />
+                  <th className="whitespace-nowrap px-3 py-2 font-normal text-neutral-600">Units Returned by Department</th>
+                  <th className="whitespace-nowrap px-3 py-2 font-normal text-neutral-600">Units Returned by Item</th>
+                </tr>
+              </thead>
+              <tbody>
+                {slice.map((c) => (
+                  <tr key={c.id} className="border-b border-primary-50 align-top last:border-b-0">
+                    <td className="whitespace-nowrap py-3 pr-3 font-medium text-neutral-800">{c.id}</td>
+                    <td className="whitespace-nowrap px-3 py-3 text-right text-neutral-700">{c.revenue}</td>
+                    <td className="whitespace-nowrap px-3 py-3 text-right font-medium text-primary-600">
+                      {c.returnRevenue}
+                    </td>
+                    <td className="px-3 py-3 text-neutral-600">{c.depts}</td>
+                    <td className="px-3 py-3 text-neutral-600">{c.items}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** All segments as a single accordion card — compact rows that expand one at a
+    time, so the whole set scans without a wall of separate boxes. */
+function SegmentDetail({
+  segments,
+  openName,
+  onToggle,
+}: {
+  segments: Segment[];
+  openName: string | null;
+  onToggle: (name: string) => void;
+}) {
+  return (
+    <Card>
+      <CardHeading
+        title="Segment detail"
+        subtitle="Open a segment to see its customers — sort any column by clicking its header."
+      />
+      <div className="mt-1">
+        {segments.map((s) => (
+          <AccordionRow
+            key={s.name}
+            segment={s}
+            open={openName === s.name}
+            onToggle={() => onToggle(s.name)}
+          />
+        ))}
       </div>
-      {!open ? (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-neutral-200 py-2 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50"
-        >
-          View {summaryVal(segment, "Customer Count")} customers
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-      ) : (
-        <>
-      <div className="mt-3 overflow-x-auto">
-        <table className="w-full min-w-[720px] text-left text-sm">
-          <thead>
-            <tr className="border-b border-neutral-200 text-[11px] [text-wrap:balance]">
-              <SortHeader label="Customer ID" col="id" sort={sort} onSort={onSort} />
-              <SortHeader label="Revenue" col="revenue" sort={sort} onSort={onSort} align="right" />
-              <SortHeader label="Return Revenue" col="returnRevenue" sort={sort} onSort={onSort} align="right" />
-              <th className="whitespace-nowrap px-3 py-2 font-normal text-neutral-600">Units Returned by Department</th>
-              <th className="whitespace-nowrap px-3 py-2 font-normal text-neutral-600">Units Returned by Item</th>
-            </tr>
-          </thead>
-          <tbody>
-            {slice.map((c) => (
-              <tr key={c.id} className="border-b border-primary-50 align-top last:border-b-0">
-                <td className="whitespace-nowrap py-3 pr-3 font-medium text-neutral-800">{c.id}</td>
-                <td className="whitespace-nowrap px-3 py-3 text-right text-neutral-700">{c.revenue}</td>
-                <td className="whitespace-nowrap px-3 py-3 text-right font-medium text-primary-600">
-                  {c.returnRevenue}
-                </td>
-                <td className="px-3 py-3 text-neutral-600">{c.depts}</td>
-                <td className="px-3 py-3 text-neutral-600">{c.items}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <Pagination page={page} pageSize={pageSize} total={total} onChange={setPage} />
-        </>
-      )}
     </Card>
   );
 }
@@ -402,15 +442,26 @@ const SEG_RECS: RecItem[] = [
 ];
 
 export default function SegmentsTab() {
+  // One segment open at a time keeps the accordion compact.
+  const [openName, setOpenName] = useState<string | null>(null);
+  const toggle = (name: string) => setOpenName((prev) => (prev === name ? null : name));
+  // Clicking a bar in the chart opens that segment and scrolls its row into view.
+  const jump = (name: string) => {
+    setOpenName(name);
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    window.setTimeout(() => {
+      document
+        .getElementById(`seg-${slugify(name)}`)
+        ?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    }, 60);
+  };
   return (
     <ExportToastProvider>
-      {/* Big picture first: every segment ranked. */}
-      <SegmentImpact segments={SEGMENTS} />
+      {/* Big picture first: every segment ranked, each a jump into its detail. */}
+      <SegmentImpact segments={SEGMENTS} onSelect={jump} />
       <RecommendedActions context="Segments" items={SEG_RECS} />
-      {/* Drill-down: every segment's customers. */}
-      {SEGMENTS.map((s) => (
-        <SegmentSection key={s.name} segment={s} />
-      ))}
+      {/* Drill-down: every segment in one accordion. */}
+      <SegmentDetail segments={SEGMENTS} openName={openName} onToggle={toggle} />
     </ExportToastProvider>
   );
 }
