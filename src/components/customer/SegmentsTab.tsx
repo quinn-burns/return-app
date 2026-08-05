@@ -596,6 +596,9 @@ const SEG_RECS: RecItem[] = [
 ];
 
 const SEG_PAGE_SIZE = 8;
+// The chart shows only the core behavioral segments (the first eight); the
+// reason and quality cohorts appear in the accordion but not the ranked chart.
+const CHART_SEGMENTS = SEGMENTS.slice(0, 8);
 
 export default function SegmentsTab() {
   // One segment open at a time keeps the accordion compact.
@@ -617,8 +620,9 @@ export default function SegmentsTab() {
   };
   return (
     <ExportToastProvider>
-      {/* Big picture first: every segment ranked, each a jump into its detail. */}
-      <SegmentImpact segments={SEGMENTS} onSelect={jump} />
+      {/* Big picture first: the core behavioral segments ranked (the reason /
+          quality cohorts stay in the accordion below), each a jump into detail. */}
+      <SegmentImpact segments={CHART_SEGMENTS} onSelect={jump} />
       <RecommendedActions context="Segments" items={SEG_RECS} />
       {/* Drill-down: every segment in one accordion, paginated 8 at a time. */}
       <SegmentDetail
