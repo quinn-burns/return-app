@@ -526,16 +526,23 @@ function AccordionRow({
 }
 
 /** All segments as a single accordion card — compact rows that expand one at a
-    time, so the whole set scans without a wall of separate boxes. */
+    time, paginated so the full list stays scannable. */
 function SegmentDetail({
   segments,
   openName,
   onToggle,
+  page,
+  pageSize,
+  onPage,
 }: {
   segments: Segment[];
   openName: string | null;
   onToggle: (name: string) => void;
+  page: number;
+  pageSize: number;
+  onPage: (page: number) => void;
 }) {
+  const slice = segments.slice(page * pageSize, page * pageSize + pageSize);
   return (
     <Card>
       <CardHeading
@@ -543,7 +550,7 @@ function SegmentDetail({
         subtitle="Open a segment to see its customers — sort any column by clicking its header."
       />
       <div className="mt-1">
-        {segments.map((s) => (
+        {slice.map((s) => (
           <AccordionRow
             key={s.name}
             segment={s}
@@ -552,6 +559,7 @@ function SegmentDetail({
           />
         ))}
       </div>
+      <Pagination page={page} pageSize={pageSize} total={segments.length} onChange={onPage} />
     </Card>
   );
 }
@@ -587,27 +595,40 @@ const SEG_RECS: RecItem[] = [
   { label: "Win back new, no-repurchase customers", tone: "good", impact: "$4.3M", context: "Segments", department: "New customers", why: "1,574 new customers returned once and never came back — a targeted win-back list before the value is lost." },
 ];
 
+const SEG_PAGE_SIZE = 8;
+
 export default function SegmentsTab() {
   // One segment open at a time keeps the accordion compact.
   const [openName, setOpenName] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
   const toggle = (name: string) => setOpenName((prev) => (prev === name ? null : name));
-  // Clicking a bar in the chart opens that segment and scrolls its row into view.
+  // Clicking a bar in the chart flips to the segment's page, opens it, and
+  // scrolls its row into view.
   const jump = (name: string) => {
+    const idx = SEGMENTS.findIndex((s) => s.name === name);
+    if (idx >= 0) setPage(Math.floor(idx / SEG_PAGE_SIZE));
     setOpenName(name);
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     window.setTimeout(() => {
       document
         .getElementById(`seg-${slugify(name)}`)
         ?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-    }, 60);
+    }, 80);
   };
   return (
     <ExportToastProvider>
       {/* Big picture first: every segment ranked, each a jump into its detail. */}
       <SegmentImpact segments={SEGMENTS} onSelect={jump} />
       <RecommendedActions context="Segments" items={SEG_RECS} />
-      {/* Drill-down: every segment in one accordion. */}
-      <SegmentDetail segments={SEGMENTS} openName={openName} onToggle={toggle} />
+      {/* Drill-down: every segment in one accordion, paginated 8 at a time. */}
+      <SegmentDetail
+        segments={SEGMENTS}
+        openName={openName}
+        onToggle={toggle}
+        page={page}
+        pageSize={SEG_PAGE_SIZE}
+        onPage={setPage}
+      />
     </ExportToastProvider>
   );
 }
