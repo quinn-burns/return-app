@@ -265,9 +265,9 @@ export default function Sidebar() {
           <div className="flex h-20 shrink-0 items-center gap-1 py-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/nav/arcteryx-logo.svg"
-              alt="Arc'teryx"
-              className="h-[72px] w-[122px] object-contain"
+              src="/nav/brand-logo.svg"
+              alt="Returnalyze"
+              className="mr-auto h-6 w-auto object-contain"
             />
             <button
               type="button"
@@ -312,18 +312,6 @@ export default function Sidebar() {
           </div>
 
           <AiCreditUsage collapsed={showCollapsed} />
-
-          {showCollapsed ? (
-            <div className="flex h-[34px] w-full items-center justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/nav/brand-mark.svg" alt="Return App" className="h-auto w-6" />
-            </div>
-          ) : (
-            <div className="flex h-[34px] w-full items-center px-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/nav/brand-logo.svg" alt="Return App" className="h-[21px] w-auto" />
-            </div>
-          )}
         </div>
        </div>
       </aside>
