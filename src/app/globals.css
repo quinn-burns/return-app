@@ -75,7 +75,7 @@
   --color-chart-return: #3457c9;
 
   /* Sidebar fixed width */
-  --spacing-sidebar: 12.5rem; /* 200px – expanded navbar, content-hugging */
+  --spacing-sidebar: 16rem; /* 256px – expanded navbar, fits the Returnalyze wordmark + collapse button */
   --spacing-sidebar-collapsed: 4.5rem; /* 72px – folded navbar (Figma 1807:10038) */
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
